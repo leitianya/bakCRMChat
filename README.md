@@ -271,7 +271,7 @@ ThinkPHP6.0遵循PSR-2命名规范和PSR-4自动加载规范，并且注意如�
 
 本项目包含的第三方源码和二进制文件之版权信息另行标注。
 
-版权所有Copyright © 2017-2024 by [CRMEB](http://www.crmeb.com)
+版权所有Copyright © 2017-2024 by [CRMEB](http://www.crmeb.com?from=giteecrmchat)
 
 All rights reserved。
 
