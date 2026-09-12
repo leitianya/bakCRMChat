@@ -1,30 +1,12 @@
 <template>
   <div class="header-bar">
-    <sider-trigger :collapsed="collapsed" icon="md-menu" @on-change="handleCollpasedChange"></sider-trigger>
-    <span class="i-layout-header-trigger" @click="handleReload">
-      <Icon type="ios-refresh" />
-    </span>
-    <custom-bread-crumb show-icon style="margin-left: 30px;" :list="breadCrumbList" :listLast="crumbPast" :collapsed="collapsed"></custom-bread-crumb>
+    <sider-trigger :collapsed="collapsed" icon="panel" @on-change="handleCollpasedChange"></sider-trigger>
+    <custom-bread-crumb show-icon :list="breadCrumbList" :listLast="crumbPast" :collapsed="collapsed"></custom-bread-crumb>
     <div class="custom-content-con">
       <slot></slot>
     </div>
   </div>
 </template>
-<style scoped lang="less">
-  .ivu-icon-ios-refresh{
-     color: #999 !important;
-     font-size: 23px;
-  }
-  .i-layout-header-trigger{
-    position: absolute;
-    margin: 0 10px;
-    cursor: pointer;
-    font-size: 19px;
-  }
-  .i-layout-header-trigger:hover{
-    color: #2D8cF0;
-  }
-</style>
 <script>
     import siderTrigger from './sider-trigger'
     import customBreadCrumb from './custom-bread-crumb'
@@ -80,9 +62,6 @@
         methods: {
             handleCollpasedChange (state) {
                 this.$emit('on-coll-change', state)
-            },
-            handleReload () {
-                this.$emit('on-reload')
             }
         }
     }

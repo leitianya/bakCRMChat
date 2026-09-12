@@ -11,11 +11,17 @@
     </Sider>
     <Layout>
       <Header class="header-con">
-        <header-bar :collapsed="collapsed" @on-coll-change="handleCollapsedChange" @on-reload="handleReload">
+        <header-bar :collapsed="collapsed" @on-coll-change="handleCollapsedChange">
           <user :message-unread-count="unreadCount" :user-avatar="userAvatar" />
+          <kefu-login />
           <language v-if="$config.useI18n" @on-lang-change="setLocal" style="margin-right: 10px;" :lang="local" />
           <header-notice></header-notice>
-          <fullscreen v-model="isFullscreen" style="margin-right: 10px;" />
+          <Tooltip content="刷新页面" placement="bottom">
+            <span class="i-layout-header-trigger" @click="handleReload">
+              <Icon type="ios-refresh" />
+            </span>
+          </Tooltip>
+          <fullscreen v-model="isFullscreen" />
           <!-- <error-store v-if="$config.plugin['error-store'] && $config.plugin['error-store'].showInHeader" :has-read="hasReadErrorPage" :count="errorCount"></error-store> -->
           <header-search></header-search>
         </header-bar>
@@ -45,6 +51,7 @@ import SideMenu from './components/side-menu'
 import HeaderBar from './components/header-bar'
 import TagsNav from './components/tags-nav'
 import User from './components/user'
+import KefuLogin from './components/kefu-login'
 import ABackTop from './components/a-back-top'
 import Fullscreen from './components/fullscreen'
 import Language from './components/language'
@@ -71,6 +78,7 @@ export default {
     Fullscreen,
     //ErrorStore,
     User,
+    KefuLogin,
     ABackTop,
     iCopyright,
     HeaderSearch,
@@ -266,6 +274,30 @@ export default {
 <style lang="less">
 .main .header-con {
   padding: 0 20px 0 0px;
+}
+/* 头部图标统一规格：36×36 热区、20px 图标、悬停主题蓝+浅蓝底（刷新按钮，位于全屏图标后） */
+/* 水平 5px 边距：相邻图标两个 5px 叠加为统一 10px 间距 */
+.main .i-layout-header-trigger{
+  float: right;
+  width: 36px;
+  height: 36px;
+  margin: 14px 5px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5c6b77;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color .2s ease, background-color .2s ease;
+  &:hover{
+    color: #2D8cF0;
+    background-color: #f0f7ff;
+  }
+  .ivu-icon-ios-refresh{
+    font-size: 20px;
+    /* 提高优先级覆盖全局 style.css 的 #1890FF，使刷新图标与头部图标同色、悬停同步变蓝 */
+    color: inherit !important;
+  }
 }
 .main .logo-con img {
   width: auto;

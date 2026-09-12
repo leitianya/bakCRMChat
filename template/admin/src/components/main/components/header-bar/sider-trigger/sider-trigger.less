@@ -1,21 +1,48 @@
 .trans{
-  transition: transform .2s ease;
+  transition: transform .2s ease, color .2s ease, background-color .2s ease;
 }
-@size: 40px;
-.sider-trigger-a{
-  padding: 6px;
+/* 头部图标统一规格：36×36 热区、20px 图标、悬停主题蓝+浅蓝底 */
+@size: 36px;
+/* Tooltip 包裹层作为统一热区，与右侧全屏按钮同规格 */
+.sider-trigger-tip .ivu-tooltip-rel{
   width: @size;
   height: @size;
-  display: inline-block;
-  text-align: center;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #5c6b77;
-  margin-top: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color .2s ease, background-color .2s ease;
+  &:hover{
+    color: #2D8cF0;
+    background-color: #f0f7ff;
+  }
+}
+.sider-trigger-a{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   i{
     .trans;
     vertical-align: top;
   }
+  .panel-trigger-icon{
+    display: block;
+  }
+  /* 面板图标内的箭头：收起时水平翻转，方向由朝左变为朝右 */
+  .panel-trigger-arrow{
+    transition: transform .2s ease;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  &.collapsed .panel-trigger-arrow{
+    transform: scaleX(-1);
+  }
+  /* 侧栏收起时箭头旋转 180°，方向随之指向右侧（展开） */
   &.collapsed i{
-    transform: rotateZ(90deg);
+    transform: rotate(180deg);
     .trans;
   }
 }

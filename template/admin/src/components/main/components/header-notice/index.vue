@@ -1,11 +1,13 @@
 <template>
   <div class="header-notice">
-    <Dropdown @on-click="jumpUrl">
-      <div>
-        <Badge dot :count="needList.length?needList.length:0">
-          <Icon type="ios-notifications-outline" size="26"></Icon>
-        </Badge>
-      </div>
+    <Dropdown trigger="click" @on-click="jumpUrl">
+      <Tooltip content="消息通知" placement="bottom">
+        <div class="notice-trigger">
+          <Badge dot :count="needList.length?needList.length:0">
+            <Icon type="ios-notifications-outline" size="20"></Icon>
+          </Badge>
+        </div>
+      </Tooltip>
       <DropdownMenu slot="list">
         <DropdownItem :name="item.url" v-for="(item,index) in needList" :key="index">
           <Icon :type="item.icon" :style="'background-color:'+item.iconColor" class="iconImg" />{{item.title}}
@@ -17,6 +19,24 @@
 <style lang="less">
 .header-notice {
   margin-right: 30px;
+}
+/* 头部图标统一规格：36×36 热区、20px 图标、悬停主题蓝+浅蓝底 */
+/* 水平 5px 边距：相邻图标两个 5px 叠加为统一 10px 间距 */
+.header-notice .notice-trigger{
+  width: 36px;
+  height: 36px;
+  margin: 14px 5px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5c6b77;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color .2s ease, background-color .2s ease;
+}
+.header-notice .notice-trigger:hover{
+  color: #2D8cF0;
+  background-color: #f0f7ff;
 }
 .header-notice .ivu-dropdown-item {
   font-size: 14px !important;

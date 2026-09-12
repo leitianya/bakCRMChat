@@ -59,6 +59,11 @@
 </script>
 <style lang="less">
   .custom-bread-crumb{
-    margin-left: 46px!important;
+    /* 与左侧刷新图标保持 10px 间距，与头部图标 10px 间距节奏一致（覆盖模板上的内联 30px） */
+    margin-left: 10px!important;
+  }
+  /* 面包屑图标与头部操作图标同色，避免发黑突兀 */
+  .custom-bread-crumb .ivu-icon{
+    color: #5c6b77;
   }
 </style>

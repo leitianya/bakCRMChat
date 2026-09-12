@@ -49,7 +49,7 @@
 
           <Row type="flex" class="mb20">
             <Col span="24">
-              <Button  type="primary" style="margin-right: 10px" icon="md-add" @click="editGroup({id:0})">添加标签</Button>
+              <Button  type="primary" style="margin-right: 10px" icon="md-add" @click="editGroup({id:0})">添加分组</Button>
               <Button v-auth="['setting-store_service-add']" type="success" icon="md-add" @click="add" class="mr10">添加客服</Button>
             </Col>
           </Row>
@@ -399,7 +399,16 @@ export default {
       }
       this.$modalSure(delfromData).then((res) => {
         this.$Message.success(res.msg)
-        this.groupList.splice(index, 1)
+        //删除的是当前正在筛选的分组时，重置为"全部"并重新加载列表，避免右侧列表停留在已删除的分组上
+        if (String(this.tableFrom.group_id) === String(row.id)) {
+          this.tableFrom.group_id = ''
+          this.tableFrom.page = 1
+          this.current = 0
+          this.getGroupList()
+          this.getList()
+        } else {
+          this.groupList.splice(index, 1)
+        }
       }).catch(res => {
         this.$Message.error(res.msg)
       })
@@ -420,10 +429,12 @@ export default {
     },
     bindMenuItem(name, index) {
       this.current = index;
+      this.sortName = name.id;
       this.groupList.forEach((el) => {
         el.status = false;
       });
       this.tableFrom.group_id = name.id;
+      this.tableFrom.page = 1;
       this.getList();
     },
     // 操作
@@ -771,6 +782,26 @@ export default {
 
 /deep/ .ivu-menu-vertical .ivu-menu-item-group-title {
   display: none;
+}
+
+.box-wrapper {
+  display: flex;
+  align-items: stretch;
+}
+
+.left-wrapper {
+  min-height: 560px;
+  background: #fff;
+  border-right: 1px solid #dcdee2;
+
+  // iView 给选中项 li 设了 z-index:2，会盖住普通项 li(z-index:1) 内 z-index:10000 的悬浮菜单，
+  // 统一取消 li 的 z-index，让悬浮菜单在 UL 的层叠上下文里正常置顶
+  /deep/ .ivu-menu-vertical {
+    .ivu-menu-item,
+    .ivu-menu-item-active {
+      z-index: auto;
+    }
+  }
 }
 
 .menu-item {

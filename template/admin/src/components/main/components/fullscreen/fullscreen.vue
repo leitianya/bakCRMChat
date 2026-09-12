@@ -1,7 +1,7 @@
 <template>
   <div v-if="showFullScreenBtn" class="full-screen-btn-con">
     <Tooltip :content="value ? '退出全屏' : '全屏'" placement="bottom">
-      <Icon @click.native="handleChange" :type="value ? 'ios-contract' : 'ios-qr-scanner'" :size="23"></Icon>
+      <Icon @click.native="handleChange" :type="value ? 'ios-contract' : 'ios-qr-scanner'" :size="20"></Icon>
     </Tooltip>
   </div>
 </template>
@@ -74,17 +74,22 @@
 </script>
 
 <style lang="less">
-.full-screen-btn-con{
-   margin-right: 17px!important;
-}
-.full-screen-btn-con .ivu-tooltip-rel i{
-   font-size: 20px!important;
-}
+/* 头部图标统一规格：36×36 热区、20px 图标、悬停主题蓝+浅蓝底 */
+/* 水平 5px 边距：相邻图标两个 5px 叠加为统一 10px 间距 */
 .full-screen-btn-con .ivu-tooltip-rel{
-  height: 64px;
-  line-height: 56px;
-  i{
-    cursor: pointer;
-  }
+  width: 36px;
+  height: 36px;
+  margin: 14px 5px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5c6b77;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color .2s ease, background-color .2s ease;
+}
+.full-screen-btn-con .ivu-tooltip-rel:hover{
+  color: #2D8cF0;
+  background-color: #f0f7ff;
 }
 </style>
