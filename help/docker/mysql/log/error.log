@@ -1,0 +1,103 @@
+2026-08-28T15:43:28.492120Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-08-28T15:43:28.492147Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-08-28T15:43:28.492217Z 0 [System] [MY-013169] [Server] /usr/sbin/mysqld (mysqld 8.0.45) initializing of server in progress as process 80
+2026-08-28T15:43:28.492234Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-08-28T15:43:28.517925Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-08-28T15:43:29.232971Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-08-28T15:43:30.337402Z 6 [Warning] [MY-010453] [Server] root@localhost is created with an empty password ! Please consider switching off the --initialize-insecure option.
+2026-08-28T15:43:32.256339Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-08-28T15:43:32.256373Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-08-28T15:43:32.261257Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.45) starting as process 124
+2026-08-28T15:43:32.261279Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-08-28T15:43:32.273367Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-08-28T15:43:32.404219Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-08-28T15:43:32.648007Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-08-28T15:43:32.648064Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-08-28T15:43:32.650102Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-08-28T15:43:32.663196Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Socket: /var/run/mysqld/mysqlx.sock
+2026-08-28T15:43:32.663274Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.45'  socket: '/var/run/mysqld/mysqld.sock'  port: 0  MySQL Community Server - GPL.
+2026-08-28T15:43:33.927504Z 13 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.0.45).
+2026-08-28T15:43:35.129635Z 0 [System] [MY-010910] [Server] /usr/sbin/mysqld: Shutdown complete (mysqld 8.0.45)  MySQL Community Server - GPL.
+2026-08-28T15:43:36.095736Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-08-28T15:43:36.095832Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-08-28T15:43:36.099050Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.45) starting as process 1
+2026-08-28T15:43:36.099109Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-08-28T15:43:36.110241Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-08-28T15:43:36.223843Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-08-28T15:43:36.383571Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-08-28T15:43:36.383659Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-08-28T15:43:36.386492Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-08-28T15:43:36.400376Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
+2026-08-28T15:43:36.400475Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.45'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+2026-08-31T07:11:21.926807Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-08-31T07:11:21.926838Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-08-31T07:11:21.929258Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.45) starting as process 1
+2026-08-31T07:11:21.929294Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-08-31T07:11:21.946012Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-08-31T07:11:22.373445Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-08-31T07:11:22.570971Z 0 [System] [MY-010229] [Server] Starting XA crash recovery...
+2026-08-31T07:11:22.575876Z 0 [System] [MY-010232] [Server] XA crash recovery finished.
+2026-08-31T07:11:22.628192Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-08-31T07:11:22.628264Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-08-31T07:11:22.632310Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-08-31T07:11:22.652851Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
+2026-08-31T07:11:22.652936Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.45'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+2026-08-31T07:11:56.669873Z 0 [System] [MY-013172] [Server] Received SHUTDOWN from user <via user signal>. Shutting down mysqld (Version: 8.0.45).
+2026-08-31T07:12:01.608796Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-08-31T07:12:01.608832Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-08-31T07:12:01.614013Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.45) starting as process 1
+2026-08-31T07:12:01.614041Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-08-31T07:12:01.644068Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-08-31T07:12:02.263526Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-08-31T07:12:02.461390Z 0 [System] [MY-010229] [Server] Starting XA crash recovery...
+2026-08-31T07:12:02.464780Z 0 [System] [MY-010232] [Server] XA crash recovery finished.
+2026-08-31T07:12:02.548723Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-08-31T07:12:02.548910Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-08-31T07:12:02.552035Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-08-31T07:12:02.571582Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
+2026-08-31T07:12:02.571617Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.45'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+2026-09-04T11:28:49.701727Z 0 [System] [MY-013172] [Server] Received SHUTDOWN from user <via user signal>. Shutting down mysqld (Version: 8.0.45).
+2026-09-04T11:29:05.623169Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-09-04T11:29:05.623208Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-09-04T11:29:05.640703Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.45) starting as process 1
+2026-09-04T11:29:05.640753Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-09-04T11:29:05.656865Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-09-04T11:29:06.102801Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-09-04T11:29:07.075587Z 0 [System] [MY-010229] [Server] Starting XA crash recovery...
+2026-09-04T11:29:07.081652Z 0 [System] [MY-010232] [Server] XA crash recovery finished.
+2026-09-04T11:29:07.189100Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-09-04T11:29:07.189165Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-09-04T11:29:07.204973Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-09-04T11:29:07.290996Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
+2026-09-04T11:29:07.291070Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.45'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.
+2026-09-11T10:16:31.255366Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-09-11T10:16:31.255403Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-09-11T10:16:31.255465Z 0 [System] [MY-013169] [Server] /usr/sbin/mysqld (mysqld 8.0.45) initializing of server in progress as process 80
+2026-09-11T10:16:31.255484Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-09-11T10:16:31.265009Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-09-11T10:16:31.614875Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-09-11T10:16:32.563267Z 6 [Warning] [MY-010453] [Server] root@localhost is created with an empty password ! Please consider switching off the --initialize-insecure option.
+2026-09-11T10:16:34.901181Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-09-11T10:16:34.901246Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-09-11T10:16:34.932262Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.45) starting as process 124
+2026-09-11T10:16:34.932292Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-09-11T10:16:34.989054Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-09-11T10:16:35.357017Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-09-11T10:16:35.608738Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-09-11T10:16:35.608804Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-09-11T10:16:35.611729Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-09-11T10:16:35.625667Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Socket: /var/run/mysqld/mysqlx.sock
+2026-09-11T10:16:35.625756Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.45'  socket: '/var/run/mysqld/mysqld.sock'  port: 0  MySQL Community Server - GPL.
+2026-09-11T10:16:36.528504Z 13 [System] [MY-013172] [Server] Received SHUTDOWN from user root. Shutting down mysqld (Version: 8.0.45).
+2026-09-11T10:16:38.153426Z 0 [System] [MY-010910] [Server] /usr/sbin/mysqld: Shutdown complete (mysqld 8.0.45)  MySQL Community Server - GPL.
+2026-09-11T10:16:38.695349Z 0 [Warning] [MY-011068] [Server] The syntax '--skip-host-cache' is deprecated and will be removed in a future release. Please use SET GLOBAL host_cache_size=0 instead.
+2026-09-11T10:16:38.695382Z 0 [Warning] [MY-011070] [Server] 'Disabling symbolic links using --skip-symbolic-links (or equivalent) is the default. Consider not using this option as it' is deprecated and will be removed in a future release.
+2026-09-11T10:16:38.699107Z 0 [System] [MY-010116] [Server] /usr/sbin/mysqld (mysqld 8.0.45) starting as process 1
+2026-09-11T10:16:38.699149Z 0 [ERROR] [MY-010338] [Server] Can't find error-message file '/usr/share/mysql/errmsg.sys'. Check error-message file location and 'lc-messages-dir' configuration directive.
+2026-09-11T10:16:38.707451Z 1 [System] [MY-013576] [InnoDB] InnoDB initialization has started.
+2026-09-11T10:16:38.842713Z 1 [System] [MY-013577] [InnoDB] InnoDB initialization has ended.
+2026-09-11T10:16:39.022103Z 0 [Warning] [MY-010068] [Server] CA certificate ca.pem is self signed.
+2026-09-11T10:16:39.022193Z 0 [System] [MY-013602] [Server] Channel mysql_main configured to support TLS. Encrypted connections are now supported for this channel.
+2026-09-11T10:16:39.029221Z 0 [Warning] [MY-011810] [Server] Insecure configuration for --pid-file: Location '/var/run/mysqld' in the path is accessible to all OS users. Consider choosing a different directory.
+2026-09-11T10:16:39.040966Z 0 [System] [MY-011323] [Server] X Plugin ready for connections. Bind-address: '::' port: 33060, socket: /var/run/mysqld/mysqlx.sock
+2026-09-11T10:16:39.041016Z 0 [System] [MY-010931] [Server] /usr/sbin/mysqld: ready for connections. Version: '8.0.45'  socket: '/var/run/mysqld/mysqld.sock'  port: 3306  MySQL Community Server - GPL.

@@ -29,3 +29,9 @@ ALTER TABLE `eb_chat_user` ADD `version` varchar(30) NOT NULL DEFAULT '' COMMENT
 -- 2021/09/30新增
 ALTER TABLE `eb_chat_service_record` ADD INDEX(`online`);
 UPDATE `eb_chat_user` SET `online` = 1 WHERE `id` = (SELECT `user_id` FROM `eb_chat_service_record` WHERE `online` = 1);
+-- 2026/09/11新增
+-- 话术分类默认分类：常见问题（type=1，owner_id=0 平台公共分类，已存在时不重复插入）
+INSERT INTO `eb_category` (`pid`, `owner_id`, `name`, `sort`, `type`, `other`, `add_time`)
+SELECT 0, 0, '常见问题', 0, 1, '', UNIX_TIMESTAMP() FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `eb_category` WHERE `type` = 1 AND `name` = '常见问题');
+

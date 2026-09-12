@@ -2,3 +2,4 @@
 /session
 /temp
 /cache
+/swoole.pid

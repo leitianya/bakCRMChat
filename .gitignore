@@ -17,3 +17,5 @@ bin-release/
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
 .idea
+# Docker 本地 MySQL 数据目录不入库
+help/docker/mysql/data/

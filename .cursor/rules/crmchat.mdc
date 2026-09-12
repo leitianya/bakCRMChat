@@ -1,0 +1,6 @@
+---
+description: CRMChat 项目 AI 协作规则（唯一来源为 .crmchat/AGENTS.md）
+alwaysApply: true
+---
+
+本项目的所有 AI 协作规则统一维护在 `.crmchat/AGENTS.md`，请先完整阅读该文件并严格遵循其全部内容（项目概述、目录结构、PHP 7.1~7.4 硬性约束、架构分层、编码规范、安全禁区、Swoole 重启验证等）。

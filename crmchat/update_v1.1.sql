@@ -89,6 +89,9 @@ CREATE TABLE `eb_chat_service_group` (
  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='客服分组';
 
+-- 默认分组
+INSERT INTO `eb_chat_service_group` (`name`, `sort`) VALUES ('默认分组', 0);
+
 ALTER TABLE `eb_chat_service` ADD `group_id` INT(10) NOT NULL DEFAULT '0' COMMENT '分组id' AFTER `user_id`;
 
 -- 2022/1/18

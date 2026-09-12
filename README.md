@@ -45,6 +45,10 @@
 
 客服后台访问地址：http://域名/kefu
 
+### 默认管理员账号
+
+安装包预置的管理员账号为 **admin / 123456**（见 `crmchat/public/install/crmeb.sql`），若在安装向导（或命令行安装）中自行填写了管理员账号密码，则以自设的为准。该密码为公开演示口令，部署后请尽快登录后台修改。
+
 ### 命令文档
 #### swoole命令文档 <a target="_blank" href='https://gitee.com/ZhongBangKeJi/CRMChat/wikis/pages/preview?sort_id=4267027&doc_id=1539498'>点击查看</a>
 #### 应用KEY命令文档 <a target="_blank" href='https://gitee.com/ZhongBangKeJi/CRMChat/wikis/pages/preview?sort_id=4267028&doc_id=1539498'>点击查看</a>
@@ -81,6 +85,8 @@
 5. 客服使用文档增加
 
 ### 开发规范
+> 完整的 AI 协作开发规范（架构分层、技术栈约束、编码规范、验证方式等）统一维护在 [.crmchat/AGENTS.md](.crmchat/AGENTS.md) ，适配 ZCode、Claude Code、Cursor、Copilot 等主流 AI 开发工具，请以此为准。
+
 #### 命名规范
 ThinkPHP6.0遵循PSR-2命名规范和PSR-4自动加载规范，并且注意如下规范:
 

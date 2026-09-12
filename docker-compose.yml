@@ -1,0 +1,105 @@
+services:
+  # MySQL 容器
+  mysql:
+    container_name: crmchat_mysql
+    image: ccr.ccs.tencentyun.com/crmebky_php/mysql:v8.0.45
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_general_ci
+    ports:
+      - "33061:3306"
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_USER: crmchat
+      MYSQL_PASSWORD: 123456
+      MYSQL_DATABASE: crmeb_chat
+    volumes:
+      - ./help/docker/mysql/data:/var/lib/mysql
+      - ./help/docker/mysql/log:/var/log/mysql
+    networks:
+      app_net:
+        ipv4_address: 192.168.10.11
+  # Redis 容器
+  redis:
+    container_name: crmchat_redis
+    image: ccr.ccs.tencentyun.com/crmebky_php/redis:v8.6.1
+    restart: always
+    ports:
+      - "63791:6379"
+    environment:
+      TZ: Asia/Shanghai
+      REDIS_PASSWORD: 123456
+    networks:
+      app_net:
+        ipv4_address: 192.168.10.10
+  # PHP-FPM 容器（提供 Web HTTP 服务）
+  phpfpm:
+    container_name: crmchat_php
+    build:
+      context: ./help/docker/php
+      dockerfile: Dockerfile
+    image: crmchat_php:7.4
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+      APP_DEBUG: "true"
+      DEFAULT_TIMEZONE: Asia/Shanghai
+    ports:
+      - "9000:9000"
+    working_dir: /var/www
+    volumes:
+      - ./crmchat:/var/www
+      - ./crmchat/runtime:/var/www/runtime
+    networks:
+      app_net:
+        ipv4_address: 192.168.10.90
+  # Swoole 容器（提供 WebSocket 长连接与消息队列，默认端口 20108）
+  swoole:
+    container_name: crmchat_swoole
+    image: crmchat_php:7.4
+    restart: always
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      TZ: Asia/Shanghai
+      SWOOLE_PORT: "20108"
+    ports:
+      - "20108:20108"
+    working_dir: /var/www
+    # swoole 配置为守护进程模式（config/swoole.php daemonize=true），
+    # 命令启动后转入后台，使用 tail 保持容器前台运行并输出运行日志
+    command: sh -c "php think swoole && tail -f runtime/swoole.log"
+    volumes:
+      - ./crmchat:/var/www
+      - ./crmchat/runtime:/var/www/runtime
+    networks:
+      app_net:
+        ipv4_address: 192.168.10.91
+  # Nginx 容器
+  nginx:
+    container_name: crmchat_nginx
+    image: ccr.ccs.tencentyun.com/crmebky_php/nginx:v1.29.6
+    restart: always
+    ports:
+      - "8011:80"
+    depends_on:
+      - phpfpm
+    environment:
+      TZ: Asia/Shanghai
+    working_dir: /var/www
+    volumes_from:
+      - phpfpm
+    volumes:
+      - ./help/docker/nginx/vhost.conf:/etc/nginx/conf.d/default.conf
+      - ./help/docker/nginx/log:/etc/nginx/log
+    networks:
+      app_net:
+        ipv4_address: 192.168.10.80
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.10.0/24
