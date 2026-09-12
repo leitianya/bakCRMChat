@@ -70,7 +70,7 @@ class LabelCate extends AuthController
         $data['add_time'] = time();
         $res              = $this->services->save($data);
         $this->services->update($res->id, ['sort' => $res->id]);
-        return $this->success('添加成功');
+        return $this->success('添加成功', ['id' => $res->id]);
     }
 
     /**

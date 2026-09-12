@@ -79,7 +79,7 @@ class Label extends AuthController
 
         $res = $this->services->save($data);
         $this->services->update($res->id, ['sort' => $res->id]);
-        return $this->success('保存成功');
+        return $this->success('保存成功', ['id' => $res->id]);
     }
 
     public function move()

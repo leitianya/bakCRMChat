@@ -5,366 +5,464 @@
         <span class="ivu-page-header-title">{{$route.meta.title}}</span>
       </div>
     </div>
-    <Row class="ivu-mt box-wrapper">
-      <Col span="3" class="left-wrapper">
-      <Menu :theme="theme3" :active-name="sortName" width="auto">
-        <MenuGroup>
-          <MenuItem :name="item.id" class="menu-item" :class="{ showOn: index===current, 'ivu-menu-item-all': !index }" v-for="(item,index) in labelSort" :key="index" @click.native="bindMenuItem(item,index)">
-          <div>
-              <Icon :style="{ visibility: index ? 'visible' : 'hidden' }" type="md-menu" />
-              {{item.name}}
+    <Card class="ivu-mt box-wrapper" :bordered="false" dis-hover>
+      <div class="header-btn">
+        <Button v-auth="['admin-user-label_add']" icon="md-add" @click="add">添加标签</Button>
+        <Button v-auth="['admin-user-label_add']" type="primary" icon="md-add" class="header-btn-primary" @click="openCreateModal">添加标签组</Button>
+      </div>
+      <Table :columns="columns" :data="groupList" ref="table" class="label-table mt25" :loading="loading" no-data-text="暂无数据">
+        <template slot-scope="{ row, index }" slot="drag">
+          <Icon class="drag-handle" type="md-menu" size="16" />
+        </template>
+        <template slot-scope="{ row, index }" slot="type">
+          <span class="type-badge">手动标签</span>
+        </template>
+        <template slot-scope="{ row, index }" slot="labels">
+          <div class="tag-chips" v-if="row.label && row.label.length">
+            <span class="tag-chip" v-for="label in row.label" :key="label.id" :title="'点击编辑标签组'" @click="openGroupModal(row)">{{ label.label }}</span>
           </div>
-          <div class="icon-box" v-if="index!=0">
-            <Icon type="ios-more" size="24" @click.stop="showMenu(item)" />
-          </div>
-          <div class="right-menu ivu-poptip-inner" v-show="item.status" v-if="index!=0">
-            <div class="ivu-poptip-body" @click="labelEdit(item)">
-              <div class="ivu-poptip-body-content">
-                <div class="ivu-poptip-body-content-inner">编辑标签</div>
-              </div>
-            </div>
-            <div class="ivu-poptip-body" @click="deleteSort(item,'删除分类',index)">
-              <div class="ivu-poptip-body-content">
-                <div class="ivu-poptip-body-content-inner">删除标签</div>
-              </div>
-            </div>
-          </div>
-          </MenuItem>
-        </MenuGroup>
-      </Menu>
-      </Col>
-      <Col span="21" ref="rightBox">
-      <Card :bordered="false" dis-hover>
-        <Row type="flex">
-          <Col v-bind="grid">
-          <Button v-auth="['admin-user-label_add']" type="primary" icon="md-add" @click="add">添加标签</Button>
-          <Button v-auth="['admin-user-label_add']" type="success" icon="md-add" @click="addSort" style="margin-left: 10px">添加分类</Button>
-          </Col>
-        </Row>
-        <Table :columns="columns1" :data="labelLists" ref="table" class="mt25" :loading="loading" highlight-row no-userFrom-text="暂无数据" no-filtered-userFrom-text="暂无筛选结果">
-          <template slot-scope="{ row, index }" slot="icons">
-            <div class="tabBox_img" v-viewer>
-              <img v-lazy="row.icon">
-            </div>
-          </template>
-          <template slot-scope="{ row, index }" slot="action">
-            <a @click="edit(row.id)">修改</a>
-            <Divider type="vertical" />
-            <a @click="del(row,'删除分组',index)">删除</a>
-          </template>
-        </Table>
-        <div class="acea-row row-right page">
-          <Page :total="total" show-elevator show-total @on-change="pageChange" :page-size="labelFrom.limit" />
-        </div>
-      </Card>
-      </Col>
-    </Row>
+          <span class="tag-empty" v-else>暂无标签</span>
+        </template>
+        <template slot-scope="{ row, index }" slot="action">
+          <a @click="openGroupModal(row)">编辑</a>
+          <a class="del-link" @click="removeGroup(row)">删除</a>
+        </template>
+      </Table>
 
+      <!-- 编辑/添加标签组弹窗 -->
+      <Modal v-model="modalShow" :title="modalIsCreate ? '添加标签组' : '编辑标签组'" :width="720" :mask-closable="false" class="group-modal" @on-visible-change="modalVisibleChange">
+        <div class="group-form">
+          <div class="form-item">
+            <div class="form-label">标签组名称</div>
+            <Input v-model="modalForm.name" size="large" placeholder="请输入标签组名称" />
+          </div>
+          <div class="form-item">
+            <div class="form-label">标签组类型</div>
+            <RadioGroup v-model="modalForm.type">
+              <Radio label="manual">手动标签</Radio>
+              <Radio label="system" disabled>系统标签</Radio>
+            </RadioGroup>
+          </div>
+          <div class="form-item">
+            <div class="form-label">标签</div>
+            <div class="tag-rows" ref="tagRows">
+              <div class="tag-row" v-for="(tag, index) in modalForm.tags" :key="tag.key">
+                <Input v-model="tag.label" size="large" placeholder="请输入标签名称" class="tag-row-input" />
+                <Icon class="row-drag" type="md-menu" size="18" title="拖拽排序" />
+                <Icon class="row-del" type="ios-trash-outline" size="18" title="删除标签" @click.native="delModalTag(index)" />
+              </div>
+            </div>
+            <a class="add-tag-link" @click="addModalTag">
+              <Icon type="md-add" /> 添加标签
+            </a>
+          </div>
+        </div>
+        <div slot="footer" class="modal-footer">
+          <a class="del-group" v-if="!modalIsCreate" @click="delGroup">删除标签组</a>
+          <div class="footer-btns">
+            <Button @click="modalShow = false">取消</Button>
+            <Button type="primary" :loading="saveLoading" @click="saveGroup">确定</Button>
+          </div>
+        </div>
+      </Modal>
+    </Card>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex';
-import { userLabelAll, userLabelApi, userLabelAddApi, userLabelEdit, userLabelCreate, userUpdateApi, userLabelMoveCate, userLabelMove } from '@/api/user';
+import { userLabelAll, userLabelApi, userLabelAddApi, userLabelMoveCate, userLabelMove, userLabelCateSave, userLabelCateUpdate, userLabelCateDel, userLabelSave, userLabelUpdate, userLabelDel } from '@/api/user';
 import { Icon } from 'iview';
 import { Sortable } from "sortablejs";
 export default {
   name: 'user_label',
   data() {
     return {
-      grid: {
-        xl: 7,
-        lg: 7,
-        md: 12,
-        sm: 24,
-        xs: 24
-      },
       loading: false,
-      columns1: [
-          {
-              title: ' ',
-              width: 50,
-              render: (h) => {
-                  return h(Icon, {
-                      style: {
-                          cursor: 'move'
-                      },
-                      attrs: {
-                          type: 'md-menu'
-                      }
-                  });
-              },
-          },
+      // 标签组列表（每组内嵌 label 标签数组）
+      groupList: [],
+      // 表格列
+      columns: [
         {
-          title: 'ID',
-          key: 'id',
-          minWidth: 120
+          title: ' ',
+          width: 50,
+          slot: 'drag'
         },
         {
-          title: '标签名称',
-          key: 'label',
-          minWidth: 200
+          title: '标签组名称',
+          key: 'name',
+          width: 180
+        },
+        {
+          title: '标签类型',
+          slot: 'type',
+          width: 130
+        },
+        {
+          title: '标签',
+          slot: 'labels',
+          minWidth: 400
         },
         {
           title: '操作',
           slot: 'action',
-          fixed: 'right',
-          minWidth: 120
+          width: 130,
+          align: 'right'
         }
       ],
-      labelFrom: {
-        page: 1,
-        limit: 15,
-        cate_id: ''
+      // 弹窗状态
+      modalShow: false,
+      modalIsCreate: false,
+      saveLoading: false,
+      modalForm: {
+        id: 0,
+        name: '',
+        sort: 0,
+        type: 'manual',
+        tags: []
       },
-      labelLists: [],
-      labelListsArr: [],
-      total: 0,
-      theme3: 'light',
-      labelSort: [],
-      labelSortArr: [],
-      sortName: '',
-      current: 0
-    }
-  },
-  computed: {
-    ...mapState('media', [
-      'isMobile'
-    ]),
-    labelWidth() {
-      return this.isMobile ? undefined : 75;
-    },
-    labelPosition() {
-      return this.isMobile ? 'top' : 'right';
+      // 弹窗内被删除的已有标签 id
+      modalRemovedIds: [],
+      tagKeySeq: 0,
+      rowSortable: null
     }
   },
   created() {
-    this.getUserLabelAll();
-    this.getList()
+    this.loadData();
   },
   mounted() {
-      this.$nextTick(() => {
-          this.userLabelMoveCate();
-          this.userLabelMove();
-      });
+    this.$nextTick(() => {
+      this.initRowSortable();
+    });
+  },
+  beforeDestroy() {
+    this.rowSortable && this.rowSortable.destroy();
   },
   methods: {
-    //   拖拽分组排序
-      userLabelMoveCate() {
-          new Sortable(document.querySelector('.ivu-menu-item-group ul'), {
-              filter: '.ivu-menu-item-all',
-              preventOnFilter: true,
-              onEnd: ({ newIndex, oldIndex }) => {
-                  let row = this.labelSortArr.splice(oldIndex, 1)[0];
-                  this.labelSortArr.splice(newIndex || oldIndex, 0, row);
-                  this.labelSort = [];
-                  this.$nextTick(() => {
-                      this.labelSort = this.labelSortArr;
-                  });
-                  if (!newIndex) {
-                      return;
-                  }
-                  var ids= [];
-                  this.labelSortArr.map(res=>{
-                    if(res.id){
-                      ids.push(res.id)
-                    }
-                  })
-                  userLabelMoveCate({
-                      ids: ids,
-                  }).catch(err => {
-                      this.$Message.error(err.msg);
-                  });
-              }
-          });
-      },
-    //   拖拽标签排序
-      userLabelMove() {
-          new Sortable(document.querySelector('.ivu-table-tbody'), {
-              onEnd: ({ newIndex, oldIndex }) => {
-                  let row = this.labelListsArr.splice(oldIndex, 1)[0];
-                  this.labelListsArr.splice(newIndex, 0, row);
-                  this.labelLists = [];
-                  this.$nextTick(() => {
-                      this.labelLists = this.labelListsArr;
-                  });
-                var ids= [];
-                this.labelListsArr.map(res=>{
-                  if(res.id){
-                    ids.push(res.id)
-                  }
-                })
-                  userLabelMove({
-                      ids: ids,
-                      page:this.labelFrom.page
-                  }).catch(err => {
-                      this.$Message.error(err.msg);
-                  });
-              }
-          });
-      },
-    // 添加
-    add() {
-      this.$modalForm(userLabelAddApi()).then(() => this.getList());
-    },
-    // 分组列表
-    getList() {
+    // 加载标签组及其下属标签，按 cate_id 归组
+    loadData() {
       this.loading = true;
-      userLabelApi(this.labelFrom).then(async res => {
-        let data = res.data;
-        this.labelLists = data.list;
-        this.labelListsArr = data.list;
-        this.total = data.count;
+      Promise.all([userLabelAll(), this.getAllLabels()]).then(([cateRes, labels]) => {
+        const cates = cateRes.data.data || [];
+        this.groupList = cates.map(cate => ({
+          ...cate,
+          label: labels.filter(label => label.cate_id === cate.id)
+        }));
         this.loading = false;
       }).catch(res => {
         this.loading = false;
         this.$Message.error(res.msg);
       })
     },
-    pageChange(index) {
-      this.labelFrom.page = index;
-      this.getList();
-    },
-    // 修改
-    edit(id) {
-      this.$modalForm(userUpdateApi(id)).then(() => this.getList());
-    },
-    // 删除
-    del(row, tit, num) {
-      let delfromData = {
-        title: tit,
-        num: num,
-        url: `user/label/${row.id}`,
-        method: 'DELETE',
-        ids: ''
-      };
-      this.$modalSure(delfromData).then((res) => {
-        this.$Message.success(res.msg);
-        this.labelLists.splice(num, 1);
-        this.getList();
-      }).catch(res => {
-        this.$Message.error(res.msg);
+    // 标签按每页 50 条分页取全
+    getAllLabels() {
+      const pageLimit = 50;
+      return userLabelApi({ page: 1, limit: pageLimit }).then(async res => {
+        let list = res.data.list || [];
+        const count = res.data.count || 0;
+        const totalPages = Math.ceil(count / pageLimit);
+        for (let page = 2; page <= totalPages; page++) {
+          const pageRes = await userLabelApi({ page, limit: pageLimit });
+          list = list.concat(pageRes.data.list || []);
+        }
+        return list;
       });
     },
-    // 标签分类
-    getUserLabelAll(key) {
-      userLabelAll().then(res => {
-        let obj = {
-          name: '全部',
-          id: ''
+    // 标签组拖拽排序
+    initRowSortable() {
+      new Sortable(document.querySelector('.ivu-table-tbody'), {
+        handle: '.drag-handle',
+        onEnd: ({ newIndex, oldIndex }) => {
+          if (newIndex === oldIndex) return;
+          let row = this.groupList.splice(oldIndex, 1)[0];
+          this.groupList.splice(newIndex, 0, row);
+          const ids = this.groupList.map(res => res.id);
+          const list = this.groupList;
+          this.groupList = [];
+          this.$nextTick(() => {
+            this.groupList = list;
+          });
+          userLabelMoveCate({
+            ids: ids
+          }).catch(err => {
+            this.$Message.error(err.msg);
+          });
         }
-        res.data.data.unshift(obj)
-        res.data.data.forEach(el => {
-          el.status = false
-        })
-        if(!key) {
-          this.sortName = res.data.data[0].id
-          this.labelFrom.cate_id = res.data.data[0].id
-          this.getList();
-        }
-        this.labelSort = res.data.data;
-        this.labelSortArr = res.data.data;
-      })
+      });
     },
-    // 显示标签小菜单
-    showMenu(item) {
-      this.labelSort.forEach(el => {
-        if(el.id == item.id) {
-          el.status = item.status ? false : true
+    // 弹窗内标签行拖拽排序
+    initModalDrag() {
+      this.rowSortable && this.rowSortable.destroy();
+      this.rowSortable = null;
+      const el = this.$refs.tagRows;
+      if (!el) return;
+      this.rowSortable = new Sortable(el, {
+        handle: '.row-drag',
+        onEnd: ({ newIndex, oldIndex }) => {
+          if (newIndex === oldIndex) return;
+          const row = this.modalForm.tags.splice(oldIndex, 1)[0];
+          this.modalForm.tags.splice(newIndex, 0, row);
+        }
+      });
+    },
+    // 弹窗显示变化时初始化拖拽
+    modalVisibleChange(visible) {
+      if (visible) {
+        this.$nextTick(() => {
+          this.initModalDrag();
+        });
+      }
+    },
+    // 打开编辑标签组弹窗
+    openGroupModal(row) {
+      this.modalIsCreate = false;
+      this.modalForm = {
+        id: row.id,
+        name: row.name,
+        sort: row.sort,
+        type: 'manual',
+        tags: (row.label || []).map(label => ({
+          id: label.id,
+          label: label.label,
+          sort: label.sort,
+          key: ++this.tagKeySeq
+        }))
+      };
+      this.modalRemovedIds = [];
+      this.modalShow = true;
+    },
+    // 打开添加标签组弹窗
+    openCreateModal() {
+      this.modalIsCreate = true;
+      this.modalForm = {
+        id: 0,
+        name: '',
+        sort: 0,
+        type: 'manual',
+        tags: [this.emptyTagRow()]
+      };
+      this.modalRemovedIds = [];
+      this.modalShow = true;
+    },
+    // 空白标签行
+    emptyTagRow() {
+      return {
+        id: 0,
+        label: '',
+        sort: 0,
+        key: ++this.tagKeySeq
+      };
+    },
+    // 弹窗内追加标签行
+    addModalTag() {
+      this.modalForm.tags.push(this.emptyTagRow());
+    },
+    // 弹窗内删除标签行（已有标签记入待删除列表）
+    delModalTag(index) {
+      const row = this.modalForm.tags[index];
+      if (row && row.id) {
+        this.modalRemovedIds.push(row.id);
+      }
+      this.modalForm.tags.splice(index, 1);
+    },
+    // 保存标签组（整组：名称 + 标签增删改 + 顺序）
+    async saveGroup() {
+      const name = this.modalForm.name.trim();
+      if (!name) {
+        this.$Message.error('请输入标签组名称');
+        return;
+      }
+      // 输入被清空的已有标签视为删除，空的新建行直接忽略
+      const rows = this.modalForm.tags.filter(tag => tag.label.trim() !== '');
+      const removedIds = [...this.modalRemovedIds];
+      this.modalForm.tags.forEach(tag => {
+        if (tag.id && tag.label.trim() === '' && !removedIds.includes(tag.id)) {
+          removedIds.push(tag.id);
+        }
+      });
+      this.saveLoading = true;
+      try {
+        let cateId = this.modalForm.id;
+        if (cateId) {
+          await userLabelCateUpdate(cateId, { name, sort: this.modalForm.sort });
         } else {
-          el.status = false
+          const res = await userLabelCateSave({ name });
+          cateId = res.data.id;
         }
-      })
+        const finalIds = [];
+        for (const row of rows) {
+          const label = row.label.trim();
+          if (row.id) {
+            await userLabelUpdate(row.id, { cate_id: cateId, label, sort: row.sort });
+            finalIds.push(row.id);
+          } else {
+            const res = await userLabelSave({ cate_id: cateId, label });
+            finalIds.push(res.data.id);
+          }
+        }
+        for (const id of removedIds) {
+          await userLabelDel(id);
+        }
+        // 重建组内标签顺序（首个 id 排序最高）
+        if (finalIds.length) {
+          await userLabelMove({ ids: finalIds, page: 1 });
+        }
+        this.$Message.success('保存成功');
+        this.modalShow = false;
+        this.loadData();
+      } catch (e) {
+        this.$Message.error((e && e.msg) || '保存失败');
+      } finally {
+        this.saveLoading = false;
+      }
     },
-    //编辑标签
-    labelEdit(item) {
-      this.$modalForm(userLabelEdit(item.id)).then(() => this.getUserLabelAll(1));
-    },
-    // 添加分类
-    addSort() {
-      this.$modalForm(userLabelCreate()).then(() => this.getUserLabelAll());
-    },
-    deleteSort(row, tit, num) {
-      let delfromData = {
-        title: tit,
-        num: num,
-        url: `user/label/cate/${row.id}`,
-        method: 'DELETE',
-        ids: ''
-      };
-      this.$modalSure(delfromData).then((res) => {
-        this.$Message.success(res.msg);
-        this.labelSort.splice(num, 1);
-        this.labelSort = []
-        this.getUserLabelAll()
-      }).catch(res => {
-        this.$Message.error(res.msg);
+    // 删除标签组（连同组内标签，标签已关联用户时后端会拒绝）
+    removeGroup(row) {
+      const tags = (row.label || []).filter(label => label.id);
+      this.$Modal.confirm({
+        title: '删除标签组',
+        content: tags.length ? `删除后不可恢复，组内 ${tags.length} 个标签将一并删除，确定删除吗？` : '确定删除该标签组吗？',
+        onOk: async () => {
+          try {
+            for (const label of tags) {
+              await userLabelDel(label.id);
+            }
+            await userLabelCateDel(row.id);
+            this.$Message.success('删除成功');
+            this.loadData();
+          } catch (e) {
+            this.$Message.error((e && e.msg) || '删除失败');
+            this.loadData();
+          }
+        }
       });
     },
-    bindMenuItem(name, index) {
-      this.current = index;
-      this.labelSort.forEach(el => {
-        el.status = false
-      })
-      this.labelFrom.cate_id = name.id
-      this.getList();
+    // 弹窗底部删除标签组
+    delGroup() {
+      if (!this.modalForm.id) return;
+      this.removeGroup({ id: this.modalForm.id, label: this.modalForm.tags });
+      this.modalShow = false;
+    },
+    // 添加标签（页面右上角快捷入口）
+    add() {
+      this.$modalForm(userLabelAddApi()).then(() => this.loadData());
     }
   }
 }
 </script>
 
 <style lang="stylus" scoped>
-.showOn {
-  color: #2d8cf0;
-  background: #f0faff;
-  z-index: 2 !important s;
-}
-
-/deep/ .ivu-menu-vertical .ivu-menu-item-group-title {
-  display: none;
-}
-
-/deep/ .ivu-menu-vertical.ivu-menu-light:after {
-  display: none;
-}
-
-.left-wrapper {
-  height: 904px;
-  background: #fff;
-  border-right: 1px solid #dcdee2;
-}
-
-.menu-item {
-  z-index: 50;
-  position: relative;
+.header-btn {
   display: flex;
-  justify-content: space-between;
-  word-break: break-all;
+  justify-content: flex-end;
 
-  .icon-box {
-    z-index: 3;
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: none;
+  .header-btn-primary {
+    margin-left: 10px;
+  }
+}
+
+.label-table {
+  .drag-handle {
+    cursor: move;
+    color: #c5c8ce;
   }
 
-  &:hover .icon-box {
-    display: block;
+  .type-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border: 1px solid #2d8cf0;
+    border-radius: 4px;
+    background: #fff;
+    color: #2d8cf0;
+    font-size: 12px;
   }
 
-  .right-menu {
-    z-index: 10;
-    position: absolute;
-    right: -106px;
-    top: -11px;
-    width: auto;
-    min-width: 121px;
+  .tag-chips {
+    display: flex;
+    flex-wrap: wrap;
   }
 
-  .ivu-icon-md-menu {
-      cursor: move
+  .tag-chip {
+    display: inline-block;
+    padding: 5px 16px;
+    margin: 2px 16px 8px 0;
+    border: 1px solid #dcdee2;
+    border-radius: 4px;
+    background: #fff;
+    color: #515a6e;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      border-color: #2d8cf0;
+      color: #2d8cf0;
+    }
+  }
+
+  .tag-empty {
+    color: #999;
+  }
+
+  .del-link {
+    margin-left: 16px;
+  }
+}
+
+.group-modal {
+  .group-form {
+    padding: 0 4px;
+
+    .form-item {
+      margin-bottom: 22px;
+    }
+
+    .form-label {
+      font-size: 14px;
+      color: #17233d;
+      margin-bottom: 12px;
+    }
+
+    .tag-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .tag-row-input {
+      flex: 1;
+    }
+
+    .row-drag {
+      cursor: move;
+      color: #c5c8ce;
+      margin-left: 16px;
+    }
+
+    .row-del {
+      cursor: pointer;
+      color: #808695;
+      margin-left: 16px;
+
+      &:hover {
+        color: #ed4014;
+      }
+    }
+
+    .add-tag-link {
+      display: inline-block;
+      margin-top: 2px;
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .del-group {
+      color: #ed4014;
+      font-size: 14px;
+    }
   }
 }
 </style>

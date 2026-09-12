@@ -35,4 +35,14 @@ class ChatUserLabelAssistDao extends BaseDao
     {
 
     }
+
+    /**
+     * 按标签统计打标客户数
+     * @return array<int,int> label_id => 客户数
+     */
+    public function countGroupByLabel(): array
+    {
+        $list = $this->getModel()->field(['label_id', 'COUNT(*) AS total'])->group('label_id')->select()->toArray();
+        return array_column($list, 'total', 'label_id');
+    }
 }

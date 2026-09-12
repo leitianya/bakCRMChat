@@ -38,4 +38,13 @@ class ChatUserLabelAssist extends BaseModel
     {
         $query->where('user_id', $value);
     }
+
+    /**
+     * @param Model $query
+     * @param $value
+     */
+    public function searchLabelIdAttr($query, $value)
+    {
+        $query->where('label_id', $value);
+    }
 }

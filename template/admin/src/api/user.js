@@ -336,6 +336,74 @@ export function userLabelAddApi() {
 }
 
 /**
+ * @description 保存标签分类（整组编辑弹窗）
+ * data 请求参数
+ */
+export function userLabelCateSave(data) {
+    return request({
+        url: `user/label/cate`,
+        method: 'post',
+        data
+    })
+}
+
+/**
+ * @description 修改标签分类（整组编辑弹窗）
+ * data 请求参数
+ */
+export function userLabelCateUpdate(id, data) {
+    return request({
+        url: `user/label/cate/${id}`,
+        method: 'put',
+        data
+    })
+}
+
+/**
+ * @description 删除标签分类
+ */
+export function userLabelCateDel(id) {
+    return request({
+        url: `user/label/cate/${id}`,
+        method: 'delete'
+    })
+}
+
+/**
+ * @description 保存标签（整组编辑弹窗）
+ * data 请求参数
+ */
+export function userLabelSave(data) {
+    return request({
+        url: `user/label`,
+        method: 'post',
+        data
+    })
+}
+
+/**
+ * @description 修改标签（整组编辑弹窗）
+ * data 请求参数
+ */
+export function userLabelUpdate(id, data) {
+    return request({
+        url: `user/label/${id}`,
+        method: 'put',
+        data
+    })
+}
+
+/**
+ * @description 删除标签
+ */
+export function userLabelDel(id) {
+    return request({
+        url: `user/label/${id}`,
+        method: 'delete'
+    })
+}
+
+/**
  * @description 获取修改标签表单
  * data 请求参数
  */
