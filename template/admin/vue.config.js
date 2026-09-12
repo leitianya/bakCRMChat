@@ -29,6 +29,8 @@ module.exports = {
     // see https://github.com/vuejs/vue-cli/blob/dev/docs/webpack.md
     // 如果你不需要使用eslint，把lintOnSave设为false即可
     lintOnSave: false,
+    // wangEditor 5 源码含可选链等新语法，webpack4 需经 babel 转译
+    transpileDependencies: ['@wangeditor/editor', '@wangeditor/editor-for-vue'],
     chainWebpack: config => {
         config.resolve.alias
             .set('@', resolve('src')) // key,value自行定义，比如.set('@@', resolve('src/components'))
@@ -36,9 +38,9 @@ module.exports = {
     },
     // 设为false打包时不生成.map文件
     productionSourceMap: false,
-    // 这里写你调用接口的基础路径，来解决跨域，如果设置了代理，那你本地开发环境的axios的baseUrl要写为 '' ，即空字符串
-    // devServer: {
-    //   proxy: 'localhost:3000'
-    // }
+    // 本地开发服务器端口 8889；接口地址见 .env.development 的 VUE_APP_API_URL（后端已开启 CORS，直连即可）
+    devServer: {
+        port: 8889
+    },
     publicPath: env === 'development' ? '/admin/' : '/admin/'
 }

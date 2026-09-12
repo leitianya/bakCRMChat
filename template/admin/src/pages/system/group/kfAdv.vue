@@ -8,8 +8,7 @@
                     <div class="title">客服聊天页面展示：</div>
                 </div>
                 <FormItem label="展示内容：" prop="content">
-                    <vue-ueditor-wrap v-model="formValidate.content" @beforeInit="addCustomDialog" :config="myConfig"
-                                      style="width: 90%;"></vue-ueditor-wrap>
+                    <wang-editor v-model="formValidate.content" :height="500"></wang-editor>
                 </FormItem>
 
 
@@ -21,12 +20,12 @@
 
 <script>
     import {mapState} from 'vuex'
-    import VueUeditorWrap from 'vue-ueditor-wrap'
+    import WangEditor from '@/components/wangEditor'
     import {getKfAdv, setKfAdv} from '@/api/system'
 
     export default {
         name: 'kfAdv',
-        components: {VueUeditorWrap},
+        components: {WangEditor},
         data() {
             return {
                 dialog: {},
@@ -64,14 +63,7 @@
                 value: '',
                 modalPic: false,
                 template: false,
-                treeData: [],
-                myConfig: {
-                    autoHeightEnabled: false, // 编辑器不自动被内容撑高
-                    initialFrameHeight: 500, // 初始容器高度
-                    initialFrameWidth: '100%', // 初始容器宽度
-                    UEDITOR_HOME_URL: '/admin/UEditor/',
-                    serverUrl: ''
-                }
+                treeData: []
             }
         },
         computed: {
@@ -123,42 +115,10 @@
                     this.loading = false
                     this.$Message.error(res.msg)
                 })
-            },
-            addCustomDialog (editorId) {
-                window.UE.registerUI('test-dialog', function (editor, uiName) {
-                    // 创建 dialog
-                    let dialog = new window.UE.ui.Dialog({
-                        // 指定弹出层中页面的路径，这里只能支持页面，路径参考常见问题 2
-                        iframeUrl: '/admin/widget.images/index.html?fodder=dialog',
-                        // 需要指定当前的编辑器实例
-                        editor: editor,
-                        // 指定 dialog 的名字
-                        name: uiName,
-                        // dialog 的标题
-                        title: '上传图片',
-                        // 指定 dialog 的外围样式
-                        cssRules: 'width:1200px;height:500px;padding:20px;'
-                    })
-                    this.dialog = dialog
-                    var btn = new window.UE.ui.Button({
-                        name: 'dialog-button',
-                        title: '上传图片',
-                        cssRules: `background-image: url(../../../assets/images/icons.png);background-position: -726px -77px;`,
-                        onclick: function () {
-                            // 渲染dialog
-                            dialog.render()
-                            dialog.open()
-                        }
-                    })
-                    return btn
-                }, 37)
             }
         },
         mounted() {
             this.getKfAdv()
-        },
-        created() {
-            this.getClass()
         }
     }
 </script>

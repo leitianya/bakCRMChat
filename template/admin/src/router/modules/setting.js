@@ -132,6 +132,15 @@ export default {
             title: 'APP在线升级'
         },
         component: () => import('@/pages/setting/version/index')
+    },
+    {
+        path: 'yihaotong',
+        name: `${pre}yihaotong`,
+        meta: {
+            auth: ['setting-yihaotong'],
+            title: '一号通设置'
+        },
+        component: () => import('@/pages/setting/yihaotong/index')
     }
   ]
 }

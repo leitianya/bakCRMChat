@@ -212,3 +212,15 @@ export function kfIcon(method, data) {
         data: data || {}
     })
 }
+
+/**
+ * @description 一号通设置：保存平台登录后回传的凭证（AppId/AppSecret）
+ * @param data
+ */
+export function saveYihaotongConfig(data) {
+    return request({
+        url: 'setting/config/save_basics',
+        method: 'post',
+        data
+    })
+}

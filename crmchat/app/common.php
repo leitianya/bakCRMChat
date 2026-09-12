@@ -309,13 +309,13 @@ if (!function_exists('check_card')) {
 }
 if (!function_exists('check_link')) {
     /**
-     * 地址验证
+     * 地址验证（域名段允许无点的 localhost / IP:端口 等本地调试地址）
      * @param string $link
      * @return false|int
      */
     function check_link(string $link)
     {
-        return preg_match("/^(http|https|ftp):\/\/[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+[\/=\?%\-&_~`@[\]\’:+!]*([^<>\”])*$/", $link);
+        return preg_match("/^(http|https|ftp):\/\/[A-Za-z0-9-_]+(\.[A-Za-z0-9-_]+)*(:[0-9]+)?[\/=\?%\-&_~`@[\]\’:+!]*([^<>\”])*$/", $link);
     }
 }
 if (!function_exists('check_phone')) {
@@ -1158,5 +1158,22 @@ if (!function_exists('aj_get_serevice')) {
                 throw new ValidateException('captchaType参数不正确！');
         }
         return $service;
+    }
+}
+
+if (!function_exists('yihaotong_config')) {
+    /**
+     * 获取一号通平台配置
+     *
+     * 凭证由「一号通设置」（官方平台 iframe 登录）写入系统配置，供一号通 Serve 管理器使用。
+     * @param array $extra 额外合并的配置
+     * @return array
+     */
+    function yihaotong_config(array $extra = []): array
+    {
+        return array_merge([
+            'yihaotong_appid' => sys_config('yihaotong_appid'),
+            'yihaotong_appsecret' => sys_config('yihaotong_appsecret'),
+        ], $extra);
     }
 }
