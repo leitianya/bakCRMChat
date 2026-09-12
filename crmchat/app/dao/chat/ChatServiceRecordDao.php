@@ -127,6 +127,30 @@ class ChatServiceRecordDao extends BaseDao
     }
 
     /**
+     * 按接待记录查询条件统计数量
+     * @param array $where 与 recordModel 一致的查询条件
+     * @return int
+     */
+    public function recordCount(array $where): int
+    {
+        return (int)$this->recordModel($where)->count();
+    }
+
+    /**
+     * 时间段内按接待客服统计接待量
+     * @param int $startTime Unix 时间戳
+     * @param int $endTime Unix 时间戳
+     * @return array<int,array> to_user_id => [customers 接待客户数, records 接待会话数]
+     */
+    public function receptionGroupByKefu(int $startTime, int $endTime): array
+    {
+        $list = $this->getModel()->whereBetweenTime('add_time', $startTime, $endTime)
+            ->field(['to_user_id', 'COUNT(DISTINCT user_id) AS customers', 'COUNT(*) AS records'])
+            ->group('to_user_id')->select()->toArray();
+        return array_column($list, null, 'to_user_id');
+    }
+
+    /**
      * 查询最近和用户聊天的uid用户
      * @param array $where
      * @param string $key

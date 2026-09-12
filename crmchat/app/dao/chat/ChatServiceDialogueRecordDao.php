@@ -89,6 +89,71 @@ class ChatServiceDialogueRecordDao extends BaseDao
     }
 
     /**
+     * 对话消息流水查询模型（条件与分页）
+     * @param array $where [uid => 会话参与方 chat_user id, msn => 内容关键词, start_time/end_time => Unix 时间戳]
+     * @param int $page
+     * @param int $limit
+     * @return BaseModel|mixed|\think\Model
+     */
+    public function dialogueModel(array $where, int $page = 0, int $limit = 0)
+    {
+        return $this->search()
+            ->when(!empty($where['uid']), function ($query) use ($where) {
+                $query->where(function ($query) use ($where) {
+                    $query->where('user_id', $where['uid'])->whereOr('to_user_id', $where['uid']);
+                });
+            })
+            ->when(!empty($where['msn']), function ($query) use ($where) {
+                $query->whereLike('msn', '%' . $where['msn'] . '%');
+            })
+            ->when(!empty($where['start_time']), function ($query) use ($where) {
+                $query->where('add_time', '>=', $where['start_time']);
+            })
+            ->when(!empty($where['end_time']), function ($query) use ($where) {
+                $query->where('add_time', '<=', $where['end_time']);
+            })
+            ->when($page && $limit, function ($query) use ($page, $limit) {
+                $query->page($page, $limit);
+            });
+    }
+
+    /**
+     * 按对话消息查询条件统计数量
+     * @param array $where 与 dialogueModel 一致的查询条件
+     * @return int
+     */
+    public function dialogueCount(array $where): int
+    {
+        return (int)$this->dialogueModel($where)->count();
+    }
+
+    /**
+     * 时间段内按接收方统计消息数（客户发给客服）
+     * @param int $startTime Unix 时间戳
+     * @param int $endTime Unix 时间戳
+     * @return array<int,int> to_user_id => 消息数
+     */
+    public function messageGroupByToUser(int $startTime, int $endTime): array
+    {
+        $list = $this->getModel()->whereBetweenTime('add_time', $startTime, $endTime)
+            ->field(['to_user_id', 'COUNT(*) AS total'])->group('to_user_id')->select()->toArray();
+        return array_column($list, 'total', 'to_user_id');
+    }
+
+    /**
+     * 时间段内按发送方统计消息数（客服/客户发出）
+     * @param int $startTime Unix 时间戳
+     * @param int $endTime Unix 时间戳
+     * @return array<int,int> user_id => 消息数
+     */
+    public function messageGroupByUser(int $startTime, int $endTime): array
+    {
+        $list = $this->getModel()->whereBetweenTime('add_time', $startTime, $endTime)
+            ->field(['user_id', 'COUNT(*) AS total'])->group('user_id')->select()->toArray();
+        return array_column($list, 'total', 'user_id');
+    }
+
+    /**
      * 获取聊天记录上翻页
      * @param array $where
      * @param int $page

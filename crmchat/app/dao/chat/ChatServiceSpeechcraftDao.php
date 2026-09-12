@@ -51,4 +51,14 @@ class ChatServiceSpeechcraftDao extends BaseDao
             $query->page($page, $limit);
         })->order('sort DESC')->select()->toArray();
     }
+
+    /**
+     * 按分类统计公共话术数量
+     * @return array<int,int> cate_id => 话术数
+     */
+    public function countGroupByCate(): array
+    {
+        $list = $this->getModel()->where('kefu_id', 0)->field(['cate_id', 'COUNT(*) AS total'])->group('cate_id')->select()->toArray();
+        return array_column($list, 'total', 'cate_id');
+    }
 }

@@ -67,6 +67,45 @@ class ChatUserDao extends BaseDao
     }
 
     /**
+     * 按客户查询条件统计数量（条件口径与 getUserModel 一致）
+     * @param array $where
+     * @return int
+     */
+    public function getUserCount(array $where): int
+    {
+        return (int)$this->getUserModel($where)->count();
+    }
+
+    /**
+     * 按分组统计客户数
+     * @return array<int,int> group_id => 客户数
+     */
+    public function countGroupByGroupId(): array
+    {
+        $list = $this->getModel()->field(['group_id', 'COUNT(*) AS total'])->group('group_id')->select()->toArray();
+        return array_column($list, 'total', 'group_id');
+    }
+
+    /**
+     * 按客户ID集合取昵称映射（优先备注昵称）
+     * @param array $ids
+     * @return array<int,string> id => 昵称
+     */
+    public function getNicknameMapByIds(array $ids): array
+    {
+        if (!$ids) {
+            return [];
+        }
+        $list = $this->getModel()->whereIn('id', array_map('intval', $ids))
+            ->field(['id', 'nickname', 'remark_nickname'])->select()->toArray();
+        $map = [];
+        foreach ($list as $item) {
+            $map[(int)$item['id']] = $item['remark_nickname'] ?: $item['nickname'];
+        }
+        return $map;
+    }
+
+    /**
      * @param array $where
      * @return array
      * @throws DataNotFoundException

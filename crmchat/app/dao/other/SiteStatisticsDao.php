@@ -40,4 +40,28 @@ class SiteStatisticsDao extends BaseDao
             time_model($query, $where, 'create_time');
         });
     }
+
+    /**
+     * 时间段内站点访问统计（PV/独立IP/来源与地域 Top5）
+     * @param string $startTime Y-m-d H:i:s
+     * @param string $endTime Y-m-d H:i:s
+     * @return array [total, ip_count, sources, provinces]
+     */
+    public function visitStats(string $startTime, string $endTime): array
+    {
+        $total = (int)$this->getModel()->whereBetweenTime('create_time', $startTime, $endTime)->count();
+        $ipCount = (int)$this->getModel()->whereBetweenTime('create_time', $startTime, $endTime)->value('COUNT(DISTINCT ip)');
+        $groupField = function (string $field) use ($startTime, $endTime) {
+            return $this->getModel()->whereBetweenTime('create_time', $startTime, $endTime)
+                ->where($field, '<>', '')->where($field, '<>', '未知')
+                ->field([$field, 'COUNT(*) AS total'])->group($field)
+                ->order('total', 'desc')->limit(5)->select()->toArray();
+        };
+        return [
+            'total'     => $total,
+            'ip_count'  => $ipCount,
+            'sources'   => $groupField('source'),
+            'provinces' => $groupField('province'),
+        ];
+    }
 }

@@ -48,4 +48,17 @@ class ChatAutoReply extends BaseModel
     {
         $query->where('user_id', $value);
     }
+
+    /**
+     * 关键字模糊搜索
+     * @param $query
+     * @param $value
+     */
+    public function searchKeywordAttr($query, $value)
+    {
+        $value = trim((string)$value);
+        if ($value !== '') {
+            $query->whereLike('keyword', '%' . $value . '%');
+        }
+    }
 }

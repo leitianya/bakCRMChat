@@ -153,4 +153,15 @@ class ChatService extends BaseModel
     {
         $query->where('user_id', $value);
     }
+
+    /**
+     * 分组id搜索器
+     * @param Model $query
+     * @param $value
+     */
+    public function searchGroupIdAttr($query, $value)
+    {
+        //值为0表示全部分组，不进行过滤
+        if ($value) $query->where('group_id', $value);
+    }
 }

@@ -79,6 +79,40 @@ class ChatServiceDao extends BaseDao
     }
 
     /**
+     * 按客服 user_id 集合取昵称映射
+     * @param array $userIds
+     * @return array<string,string> user_id => nickname
+     */
+    public function getNicknameByUserIds(array $userIds): array
+    {
+        if (!$userIds) {
+            return [];
+        }
+        return $this->getModel()->whereIn('user_id', $userIds)->column('nickname', 'user_id');
+    }
+
+    /**
+     * 按客服ID/账号/昵称模糊检索客服（用于客服标识解析，最多返回 10 条）
+     * @param string $keyword 客服ID、账号或昵称
+     * @return array
+     */
+    public function getKefuListByKeyword(string $keyword): array
+    {
+        $keyword = trim($keyword);
+        if ($keyword === '') {
+            return [];
+        }
+        $query = $this->getModel()->where(function ($query) use ($keyword) {
+            $query->where('account', $keyword)->whereOr('nickname', 'like', '%' . $keyword . '%');
+        });
+        // 纯数字关键字同时匹配客服ID
+        if (ctype_digit($keyword)) {
+            $query->whereOr('id', (int)$keyword);
+        }
+        return $query->field(['id', 'appid', 'user_id', 'account', 'nickname'])->limit(10)->select()->toArray();
+    }
+
+    /**
      *
      * @param array $where
      * @param array $data

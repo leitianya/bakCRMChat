@@ -249,6 +249,81 @@ Route::group('api', function () {
             AdminCkeckRoleMiddleware::class,
             AdminLogMiddleware::class
         ]);
+
+        /**
+         * AI 对话 相关路由（后台富文本编辑器 AI 写作等）+ AI 模型管理
+         */
+        Route::group('ai', function () {
+            //AI 流式对话（SSE）
+            Route::post('chat_stream', 'AiChat/chat_stream')->name('AiChatStream')->option(['real_name' => 'AI流式对话']);
+            //AI 模型管理
+            Route::get('model/list', 'AiModel/index')->name('AiModelList')->option(['real_name' => 'AI模型列表']);
+            Route::get('model/protocols', 'AiModel/protocols')->name('AiModelProtocols')->option(['real_name' => 'AI协议族清单']);
+            Route::get('model/yihaotong_status', 'AiModel/yihaotong_status')->name('AiModelYihaotongStatus')->option(['real_name' => '一号通配置状态']);
+            Route::get('model/detail/:id', 'AiModel/read')->name('AiModelRead')->option(['real_name' => 'AI模型详情']);
+            Route::post('model/save', 'AiModel/save')->name('AiModelSave')->option(['real_name' => '新增AI模型']);
+            Route::put('model/update/:id', 'AiModel/update')->name('AiModelUpdate')->option(['real_name' => '修改AI模型']);
+            Route::delete('model/delete/:id', 'AiModel/delete')->name('AiModelDelete')->option(['real_name' => '删除AI模型']);
+            Route::put('model/set_status/:id', 'AiModel/set_status')->name('AiModelStatus')->option(['real_name' => '修改AI模型状态']);
+            Route::put('model/set_default/:id', 'AiModel/set_default')->name('AiModelDefault')->option(['real_name' => '设为默认AI模型']);
+            Route::post('model/test', 'AiModel/test')->name('AiModelTest')->option(['real_name' => 'AI模型连通性测试']);
+        })->middleware([
+            AdminAuthTokenMiddleware::class,
+            AdminCkeckRoleMiddleware::class,
+            AdminLogMiddleware::class
+        ])->prefix('admin.ai.');
+        /**
+         * AI Agent 智能体 相关路由（对话工作台 / MCP Server / Skill / 自动化任务）
+         */
+        Route::group('aiagent', function () {
+            // ===== 对话与会话 =====
+            Route::get('options', 'AiAgent/options')->name('AiAgentOptions')->option(['real_name' => 'AI 对话配置选项']);
+            Route::get('conversations', 'AiAgent/conversations')->name('AiAgentConversations')->option(['real_name' => 'AI 对话会话列表']);
+            Route::get('messages/:conversation_id', 'AiAgent/messages')->name('AiAgentMessages')->option(['real_name' => 'AI 对话消息记录']);
+            Route::delete('conversation/:id', 'AiAgent/deleteConversation')->name('AiAgentDeleteConversation')->option(['real_name' => '删除 AI 对话会话']);
+            Route::put('conversation/:id', 'AiAgent/updateConversation')->name('AiAgentUpdateConversation')->option(['real_name' => '修改 AI 对话会话']);
+            Route::post('chat', 'AiAgent/chat')->name('AiAgentChat')->option(['real_name' => 'AI Agent 对话']);
+            Route::post('chat_stream', 'AiAgent/chatStream')->name('AiAgentChatStream')->option(['real_name' => 'AI Agent 流式对话']);
+            Route::post('confirm_stream', 'AiAgent/confirmStream')->name('AiAgentConfirmStream')->option(['real_name' => 'AI Agent 待确认操作处理']);
+            // ===== AI 自动化任务 =====
+            Route::get('tasks', 'Task/index')->name('AiAgentTaskIndex')->option(['real_name' => 'AI 自动化任务列表']);
+            Route::post('task', 'Task/save')->name('AiAgentTaskSave')->option(['real_name' => '创建 AI 自动化任务']);
+            Route::get('task/:id', 'Task/read')->name('AiAgentTaskRead')->option(['real_name' => 'AI 自动化任务详情']);
+            Route::put('task/:id', 'Task/save')->name('AiAgentTaskUpdate')->option(['real_name' => '编辑 AI 自动化任务']);
+            Route::delete('task/:id', 'Task/delete')->name('AiAgentTaskDelete')->option(['real_name' => '删除 AI 自动化任务']);
+            Route::put('task/:id/status', 'Task/status')->name('AiAgentTaskStatus')->option(['real_name' => '修改 AI 自动化任务状态']);
+            Route::post('task/:id/run', 'Task/trigger')->name('AiAgentTaskTrigger')->option(['real_name' => '立即执行 AI 自动化任务']);
+            Route::get('task/:id/runs', 'Task/runs')->name('AiAgentTaskRuns')->option(['real_name' => 'AI 自动化任务运行列表']);
+            Route::get('task_runs', 'Task/runIndex')->name('AiAgentTaskRunIndex')->option(['real_name' => 'AI 自动化任务全量运行记录']);
+            Route::get('task_run/:id', 'Task/runDetail')->name('AiAgentTaskRunDetail')->option(['real_name' => 'AI 自动化任务运行详情']);
+            // ===== MCP Server 管理 =====
+            Route::get('mcp_servers', 'McpServer/index')->name('AiAgentMcpIndex')->option(['real_name' => 'MCP Server 列表']);
+            Route::post('mcp_server', 'McpServer/save')->name('AiAgentMcpSave')->option(['real_name' => '创建 MCP Server']);
+            Route::get('mcp_server/:id', 'McpServer/read')->name('AiAgentMcpRead')->option(['real_name' => 'MCP Server 详情']);
+            Route::put('mcp_server/:id', 'McpServer/save')->name('AiAgentMcpUpdate')->option(['real_name' => '编辑 MCP Server']);
+            Route::delete('mcp_server/:id', 'McpServer/delete')->name('AiAgentMcpDelete')->option(['real_name' => '删除 MCP Server']);
+            Route::put('mcp_server/:id/status', 'McpServer/status')->name('AiAgentMcpStatus')->option(['real_name' => '修改 MCP Server 状态']);
+            Route::post('mcp_server/:id/sync', 'McpServer/sync')->name('AiAgentMcpSync')->option(['real_name' => '同步 MCP Server 工具']);
+            Route::post('mcp_server/:id/test', 'McpServer/test')->name('AiAgentMcpTest')->option(['real_name' => '测试 MCP Server 连接']);
+            // ===== Skill 管理 =====
+            Route::get('skills', 'Skill/index')->name('AiAgentSkillIndex')->option(['real_name' => 'Skill 列表']);
+            Route::post('skill', 'Skill/save')->name('AiAgentSkillSave')->option(['real_name' => '创建 Skill']);
+            // 全局默认路由变量规则不含连字符，skill key 允许连字符，需显式声明
+            Route::pattern(['key' => '[A-Za-z0-9_-]+']);
+            Route::get('skill/:key', 'Skill/read')->name('AiAgentSkillRead')->option(['real_name' => 'Skill 详情']);
+            Route::put('skill/:key', 'Skill/update')->name('AiAgentSkillUpdate')->option(['real_name' => '编辑 Skill']);
+            Route::delete('skill/:key', 'Skill/delete')->name('AiAgentSkillDelete')->option(['real_name' => '删除 Skill']);
+            Route::put('skill/:key/status', 'Skill/status')->name('AiAgentSkillStatus')->option(['real_name' => '修改 Skill 状态']);
+            // Skill 附属资料（文件名含中文/点号，统一经查询参数 file 传递，避免路由变量编码问题）
+            Route::get('skill/:key/attachments', 'Skill/attachmentList')->name('AiAgentSkillAttList')->option(['real_name' => 'Skill 附属资料列表']);
+            Route::get('skill/:key/attachment', 'Skill/attachmentRead')->name('AiAgentSkillAttRead')->option(['real_name' => 'Skill 附属资料详情']);
+            Route::post('skill/:key/attachment', 'Skill/attachmentSave')->name('AiAgentSkillAttSave')->option(['real_name' => '保存 Skill 附属资料']);
+            Route::delete('skill/:key/attachment', 'Skill/attachmentDelete')->name('AiAgentSkillAttDelete')->option(['real_name' => '删除 Skill 附属资料']);
+        })->middleware([
+            AdminAuthTokenMiddleware::class,
+            AdminCkeckRoleMiddleware::class,
+            AdminLogMiddleware::class
+        ])->prefix('admin.aiagent.');
         /**
          * 系统设置维护 系统权限管理、系统菜单管理 系统配置 相关路由
          */

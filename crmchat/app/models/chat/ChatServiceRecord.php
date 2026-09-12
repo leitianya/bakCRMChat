@@ -131,6 +131,32 @@ class ChatServiceRecord extends BaseModel
     }
 
     /**
+     * 访问时间起始搜索器（Unix 时间戳，0 不限）
+     * @param Model $query
+     * @param $value
+     */
+    public function searchAddTimeStartAttr($query, $value)
+    {
+        $value = (int)$value;
+        if ($value > 0) {
+            $query->where('add_time', '>=', $value);
+        }
+    }
+
+    /**
+     * 访问时间截止搜索器（Unix 时间戳，0 不限）
+     * @param Model $query
+     * @param $value
+     */
+    public function searchAddTimeEndAttr($query, $value)
+    {
+        $value = (int)$value;
+        if ($value > 0) {
+            $query->where('add_time', '<=', $value);
+        }
+    }
+
+    /**
      *
      * @param $value
      * @param $data

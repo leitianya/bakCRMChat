@@ -38,6 +38,7 @@ return [
         'order.take' => [\app\listener\order\Take::class], //订单收货事件
 //        'notice.news' => [\app\listener\notice\News::class], //通知->消息事件
         'notice.notice' => [\app\listener\notice\Notice::class], //通知->消息事件
+        'Task_60' => [\app\listener\task\AiAgentTaskDispatch::class], //AI 自动化任务调度（swoole timer 每分钟触发）
     ],
 
     'subscribe' => [

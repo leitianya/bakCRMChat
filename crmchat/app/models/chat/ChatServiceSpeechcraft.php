@@ -59,6 +59,21 @@ class ChatServiceSpeechcraft extends BaseModel
     }
 
     /**
+     * 关键词搜索（标题或内容模糊匹配）
+     * @param Model $query
+     * @param $value
+     */
+    public function searchKeywordAttr($query, $value)
+    {
+        $value = trim((string)$value);
+        if ($value !== '') {
+            $query->where(function ($query) use ($value) {
+                $query->whereLike('title', '%' . $value . '%')->whereOr('message', 'like', '%' . $value . '%');
+            });
+        }
+    }
+
+    /**
      * 归属客服搜索
      * @param Model $query
      * @param $value
