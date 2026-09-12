@@ -58,14 +58,9 @@
             </div>
           </div>
 
-          <div class="label-list" @click.stop="isEditRemark = true;remarkValue = activeUserInfo.remarks;">
+          <div class="item remark-item">
             <span>备注</span>
-            <div class="con">
-              <div class="">{{activeUserInfo.remarks}}</div>
-            </div>
-            <div class="right-icon">
-              <Icon type="ios-arrow-forward" size="14" />
-            </div>
+            <Input class="remark-input" type="textarea" :rows="4" v-model="remarkValue" maxlength="200" placeholder="请输入备注" @on-blur="saveRemark"></Input>
           </div>
 
         </div>
@@ -120,14 +115,6 @@
         <span>选择用户分组</span>
       </p>
       <user-group v-if="isUserGroup" @close="usergroupClose" :userGroup="userGroupList" :activeUserInfo="activeUserInfo" @selectGroup="selectGroup" @handleSelectGroup="handleSelectGroup"></user-group>
-    </Modal>
-
-    <Modal v-model="isEditRemark" title="请输入用户备注" width="320" class="none-radius">
-      <Input v-model="remarkValue" placeholder="请输入备注"></Input>
-      <div slot="footer">
-        <Button @click="isEditRemark=false">取消</Button>
-        <Button type="primary" @click="handlyEditRemark">确定</Button>
-      </div>
     </Modal>
   </div>
 </template>
@@ -208,8 +195,7 @@ export default {
       editUserNameModel: false,
       editUserPhoneModel: false,
       copyGroupId: '',
-      isEditRemark: false, // 修改备注
-      remarkValue: '',
+      remarkValue: '', // 用户备注（行内编辑）
       isUserGroup: false, // 是否展示分组
       userGroupList: [],
       model1: '',
@@ -301,18 +287,20 @@ export default {
   },
   methods: {
 
-    // 修改备注
-    handlyEditRemark() {
-      console.log(this.activeUserInfo);
-      if(!this.remarkValue) {
+    // 保存备注（行内编辑，失焦或回车触发）
+    saveRemark() {
+      if(!this.activeUserInfo) return;
+      const remarks = this.remarkValue ? this.remarkValue.trim() : '';
+      // 内容未变化时不重复提交
+      if(remarks === (this.activeUserInfo.remarks || '')) return;
+      if(!remarks) {
         this.$Message.error('请填写用户备注');
+        this.remarkValue = this.activeUserInfo.remarks || '';
         return;
       }
-      updateUserData(this.activeUserInfo.id, { remarks: this.remarkValue }).then(res => {
+      updateUserData(this.activeUserInfo.id, { remarks }).then(res => {
         this.$Message.success('修改成功');
-        this.getUserInfo();
-        this.remarkValue = '';
-        this.isEditRemark = false
+        this.activeUserInfo.remarks = remarks;
       })
     },
 
@@ -379,6 +367,7 @@ export default {
       userInfo(this.uid).then(res => {
         this.activeUserInfo = res.data;
         this.copyGroupId = this.activeUserInfo.group_id;
+        this.remarkValue = this.activeUserInfo.remarks || '';
       }).catch(error => {
         this.activeUserInfo = ''
       })
@@ -529,8 +518,6 @@ export default {
       updateUserData(this.activeUserInfo.id, { ...this.activeUserInfo, remark_nickname: this.activeUserInfo.nickname }).then(res => {
         this.$Message.success('修改成功');
         this.getUserInfo();
-        this.remarkValue = '';
-        this.isEditRemark = false;
         callback();
       })
     }
@@ -620,6 +607,18 @@ color #6440C2, &.routine {
       width: 70px;
       font-size: 13px;
       color: #666;
+    }
+
+    .remark-input {
+      flex: 1;
+    }
+
+    &.remark-item {
+      align-items: flex-start;
+
+      span {
+        line-height: 32px;
+      }
     }
   }
 

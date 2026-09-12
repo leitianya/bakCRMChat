@@ -110,10 +110,19 @@
 						</view>
 					</view>
 
-					<scroll-view class="emoji" v-if="selectModel == 1" scroll-y>
-						<view class="emoji-item" v-for="(item, index) in emoji" :key="index" @click="sendEmoji(item)"><i
-								class="em" :class="item"></i></view>
-					</scroll-view>
+					<view class="emoji-panel" v-if="selectModel == 1">
+						<view class="emoji-tabs">
+							<text class="tab-item" :class="{ on: emojiTab === 'qq' }" @click="emojiTab = 'qq'">QQ表情</text>
+							<text class="tab-item" :class="{ on: emojiTab === 'default' }" @click="emojiTab = 'default'">陀螺匠</text>
+						</view>
+						<scroll-view class="emoji" v-if="emojiTab === 'default'" scroll-y>
+							<view class="emoji-item" v-for="(item, index) in emoji" :key="index" @click="sendEmoji(item)"><i
+									class="em" :class="item"></i></view>
+						</scroll-view>
+						<scroll-view class="emoji" v-else scroll-y>
+							<view class="emoji-item qq" v-for="(item, index) in qqEmojis" :key="index" @click="sendQq(item)">{{ item.char }}</view>
+						</scroll-view>
+					</view>
 				</view>
 			</view>
 		</lay-out>
@@ -160,7 +169,7 @@
 </template>
 
 <script>
-	import emoji from 'pages/utils/emoji.js';
+	import emoji, { qqEmojis } from 'pages/utils/emoji.js';
 	import {
 		navigateBack,
 		navigateTo,
@@ -191,6 +200,8 @@
 				sendMessage: '', // 发送的消息
 				selectModel: 0, // 1:选择表情 2: 功能选择（转接，上传图片）
 				emoji: [],
+				qqEmojis: [], // QQ 经典表情（Unicode 原生字符）
+				emojiTab: 'qq', // 表情面板当前 tab：qq=QQ表情（第一个，默认） default=陀螺匠表情
 				messageList: [],
 				userData: {},
 				pageData: {
@@ -245,6 +256,7 @@
 		},
 		onLoad(opt) {
 			this.emoji = emoji;
+			this.qqEmojis = qqEmojis;
 			this.userId = opt.to_user_id;
 			if (!this.userId) {
 				return navigateBack(1);
@@ -431,6 +443,10 @@
 			sendEmoji(item) {
 				this.sendMessage += `[${item}]`;
 			},
+			// 选择 QQ 表情（Unicode 原生字符直接追加，随文本发送）
+			sendQq(item) {
+				this.sendMessage += item.char;
+			},
 			// 发送图片
 			uploadImage() {
 				let that = this;
@@ -614,7 +630,7 @@
 			},
 			// 聊天表情转换
 			replace_em(str) {
-				str = str.replace(/\[em-([\s\S]*)\]/g, "<span class='em em-$1'/></span>");
+				str = str.replace(/\[em-([\s\S]*?)\]/g, "<span class='em em-$1'/></span>");
 				return str;
 			},
 			textareaChange(e) {

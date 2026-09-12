@@ -111,9 +111,20 @@
       </div>
       <!-- 表情及图片容器 -->
       <div class="mobel_customerServer_container_footer_emojiList" :class="{'canSelectemoji': inputConType == 2}">
-        <div class="emoji-item" v-for="(emoji, index) in emojiList" :key="index" v-if="inputConType == 2">
-          <i class="em" :class="emoji" @click.stop="select(emoji)"></i>
-        </div>
+        <template v-if="inputConType == 2">
+          <div class="emoji-tabs">
+            <span class="tab-item" :class="{ on: emojiTab === 'qq' }" @click.stop="emojiTab = 'qq'">QQ表情</span>
+            <span class="tab-item" :class="{ on: emojiTab === 'default' }" @click.stop="emojiTab = 'default'">陀螺匠</span>
+          </div>
+          <div class="emoji-list" v-if="emojiTab === 'qq'">
+            <div class="emoji-item qq" v-for="(item, index) in qqEmojis" :key="index" @click.stop="selectQq(item)">{{ item.char }}</div>
+          </div>
+          <div class="emoji-list" v-else>
+            <div class="emoji-item" v-for="(emoji, index) in emojiList" :key="index">
+              <i class="em" :class="emoji" @click.stop="select(emoji)"></i>
+            </div>
+          </div>
+        </template>
       </div>
       <!-- 表情及图片容器结束 -->
     </div>
@@ -123,7 +134,7 @@
 </template>
 <script>
 import { HappyScroll } from 'vue-happy-scroll'
-import emojiList from "@/utils/emoji";
+import emojiList, { qqEmojis } from "@/utils/emoji";
 import socketServer from './minix/socketServer';
 import '@/assets/js/uniapp.js';
 export default {
@@ -136,6 +147,8 @@ export default {
       isLoad: false,
       scrollTop: 0,
       emojiList: emojiList,
+      qqEmojis: qqEmojis, // QQ 经典表情（Unicode 原生字符）
+      emojiTab: 'qq', // 表情面板当前 tab：qq=QQ表情（第一个，默认） default=陀螺匠表情
       pCont: '',
       deviceType:'mobile',
     }
@@ -216,7 +229,7 @@ export default {
 
     // 聊天表情转换
     replace_em(str) {
-      str = str.replace(/\[em-([\s\S]*)\]/g, "<span class='em em-$1'/></span>");
+      str = str.replace(/\[em-([\s\S]*?)\]/g, "<span class='em em-$1'/></span>");
       return str;
     },
   }
@@ -491,18 +504,74 @@ export default {
     &_emojiList {
       width: 100%;
       height: 0;
-      // padding: 10px;
-      display: grid;
-      grid-template-columns: repeat(9, 1fr);
-      grid-row-gap: 20px;
-      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       background: #fff;
       transition: 0.3s;
+
+      .emoji-tabs {
+        flex: none;
+        display: flex;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ececec;
+
+        .tab-item {
+          padding: 2px 12px;
+          font-size: 12px;
+          color: #666666;
+          cursor: pointer;
+          border-radius: 4px;
+
+          & + .tab-item {
+            margin-left: 8px;
+          }
+
+          &.on {
+            color: #3875ea;
+            background: #ecf2fe;
+          }
+        }
+      }
+
+      .emoji-list {
+        flex: 1;
+        // flex 子项默认 min-height:auto，不置 0 则内容撑高后滚动条不生效
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(9, 1fr);
+        grid-row-gap: 12px;
+        align-items: center;
+        justify-items: center;
+        overflow-y: auto;
+
+        // 细滚动条贴面板右缘，不挤占表情格
+        &::-webkit-scrollbar {
+          width: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 2px;
+        }
+
+        .emoji-item {
+          cursor: pointer;
+
+          // QQ 表情为 Unicode 字符，用字号呈现
+          &.qq {
+            width: 100%;
+            font-size: 20px;
+            line-height: 1;
+            text-align: center;
+          }
+        }
+      }
     }
   }
 }
 .canSelectemoji {
-  height: 165px !important;
+  height: 200px !important;
   padding: 10px;
 }
 

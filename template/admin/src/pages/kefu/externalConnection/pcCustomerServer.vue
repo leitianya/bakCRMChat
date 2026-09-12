@@ -99,8 +99,17 @@
                         <div class="pc_customerServer_container_footer_header">
                             <!-- 表情及图片容器 -->
                             <div class="pc_customerServer_container_footer_emoji" v-if="inputConType == 2">
-                                <div class="emoji-item" v-for="(emoji, index) in emojiList" :key="index">
-                                    <i class="em" :class="emoji" @click.stop="select(emoji)"></i>
+                                <div class="emoji-tabs">
+                                    <span class="tab-item" :class="{ on: emojiTab === 'qq' }" @click.stop="emojiTab = 'qq'">QQ表情</span>
+                                    <span class="tab-item" :class="{ on: emojiTab === 'default' }" @click.stop="emojiTab = 'default'">陀螺匠</span>
+                                </div>
+                                <div class="emoji-list" v-if="emojiTab === 'qq'">
+                                    <div class="emoji-item qq" v-for="(item, index) in qqEmojis" :key="index" :title="item.name" @click.stop="selectQq(item)">{{ item.char }}</div>
+                                </div>
+                                <div class="emoji-list" v-else>
+                                    <div class="emoji-item" v-for="(emoji, index) in emojiList" :key="index">
+                                        <i class="em" :class="emoji" @click.stop="select(emoji)"></i>
+                                    </div>
                                 </div>
                             </div>
                             <div class="pc_customerServer_container_footer_header_handle">
@@ -160,7 +169,7 @@
 </template>
 <script>
     import {HappyScroll} from 'vue-happy-scroll'
-    import emojiList from "@/utils/emoji";
+    import emojiList, { qqEmojis } from "@/utils/emoji";
     import socketServer from './minix/socketServer';
 
     export default {
@@ -174,6 +183,8 @@
                 isLoad: false,
                 scrollTop: 0,
                 emojiList: emojiList,
+                qqEmojis: qqEmojis, // QQ 经典表情（Unicode 原生字符）
+                emojiTab: 'qq', // 表情面板当前 tab：qq=QQ表情（第一个，默认） default=陀螺匠表情
                 inputConType: 1,
                 deviceType: 'pc',
             }
@@ -216,7 +227,7 @@
             },
             // 聊天表情转换
             replace_em(str) {
-                str = str.replace(/\[em-([\s\S]*)\]/g, "<span class='em em-$1'/></span>");
+                str = str.replace(/\[em-([\s\S]*?)\]/g, "<span class='em em-$1'/></span>");
                 return str;
             },
         }
@@ -485,21 +496,86 @@
 
             &_emoji {
                 max-width: 420px;
-                display: grid;
-                grid-template-columns: repeat(9, 1fr);
-                padding-top: 10px;
-                max-height: 150px;
-                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                max-height: 220px;
                 background: #fff;
                 position: absolute;
                 bottom: 50px;
                 left: 0;
+                border: 1px solid #ececec;
+                border-radius: 6px;
+                box-shadow: 1px 0 16px 0 rgba(0, 0, 0, 0.05);
+                box-sizing: border-box;
+
+                .emoji-tabs {
+                    flex: none;
+                    display: flex;
+                    padding: 8px 10px;
+                    border-bottom: 1px solid #ececec;
+
+                    .tab-item {
+                        padding: 2px 12px;
+                        font-size: 12px;
+                        color: #666666;
+                        cursor: pointer;
+                        border-radius: 4px;
+
+                        & + .tab-item {
+                            margin-left: 8px;
+                        }
+
+                        &:hover {
+                            color: #3875ea;
+                        }
+
+                        &.on {
+                            color: #3875ea;
+                            background: #ecf2fe;
+                        }
+                    }
+                }
+
+                .emoji-list {
+                    flex: 1;
+                    // flex 子项默认 min-height:auto，不置 0 则内容撑高后滚动条不生效
+                    min-height: 0;
+                    display: grid;
+                    grid-template-columns: repeat(9, 1fr);
+                    align-items: center;
+                    justify-items: center;
+                    padding: 10px 0;
+                    overflow-y: auto;
+
+                    // 细滚动条贴面板右缘，不挤占表情格
+                    &::-webkit-scrollbar {
+                        width: 4px;
+                    }
+
+                    &::-webkit-scrollbar-thumb {
+                        background: #c1c1c1;
+                        border-radius: 2px;
+                    }
+                }
 
                 .emoji-item {
                     padding: 6px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    cursor: pointer;
+
+                    &:hover {
+                        background-color: #ececec;
+                        border-radius: 4px;
+                    }
+
+                    // QQ 表情为 Unicode 字符，用字号呈现
+                    &.qq {
+                        width: 100%;
+                        font-size: 20px;
+                        line-height: 1;
+                    }
                 }
             }
 

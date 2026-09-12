@@ -92,12 +92,22 @@
                 </div>
                 <div class="transfer-bg" v-if="isTransfer" @click.stop="isTransfer = false"></div>
               </div>
-              <!-- 表情 -->
+              <!-- 表情面板：默认/QQ 两组表情 tab 切换 -->
               <div class="emoji-box" v-show="isEmoji">
-                <div class="emoji-item" v-for="(emoji, index) in emojiList" :key="index">
-                  <i class="em" :class="emoji" @click.stop="select(emoji)"></i>
+                <div class="emoji-tabs">
+                  <span class="tab-item" :class="{ on: emojiTab === 'qq' }" @click.stop="emojiTab = 'qq'">QQ表情</span>
+                  <span class="tab-item" :class="{ on: emojiTab === 'default' }" @click.stop="emojiTab = 'default'">陀螺匠</span>
+                </div>
+                <div class="emoji-list" v-if="emojiTab === 'default'">
+                  <div class="emoji-item" v-for="(emoji, index) in emojiList" :key="index">
+                    <i class="em" :class="emoji" @click.stop="select(emoji)"></i>
+                  </div>
+                </div>
+                <div class="emoji-list" v-else>
+                  <div class="emoji-item qq" v-for="(item, index) in qqEmojis" :key="index" :title="item.name" @click.stop="selectQq(item)">{{ item.char }}</div>
                 </div>
               </div>
+              <div class="emoji-bg" v-show="isEmoji" @click.stop="isEmoji = false"></div>
             </div>
             <div class="textarea-box" style="position:relative;">
               <!-- <Input v-model="chatCon" type="textarea" :rows="4" @keydown.enter="sendText" placeholder="请输入文字内容" @on-enter="sendText" style="font-size:14px" /> -->
@@ -138,7 +148,7 @@ import { HappyScroll } from 'vue-happy-scroll'
 import baseHeader from './components/baseHeader';
 import chatList from './components/chatList'
 import rightMenu from "./components/rightMenu";
-import emojiList from "@/utils/emoji";
+import emojiList, { qqEmojis } from "@/utils/emoji";
 import { Socket } from '@/libs/socket';
 import msgWindow from "./components/msgWindow";
 import authReply from "./components/authReply";
@@ -188,6 +198,8 @@ export default {
       chatCon: '', // 输入框输入的聊天内容
       emojiGroup: chunk(emojiList, 20), // 表情列表 已20个一组进行分组
       emojiList: emojiList, // 表情总数据
+      qqEmojis: qqEmojis, // QQ 经典表情（Unicode 原生字符）
+      emojiTab: 'qq', // 表情面板当前 tab：qq=QQ表情（第一个，默认） default=陀螺匠表情
       html: '',
       userActive: {}, //左侧用户列表选中信息
       kefuInfo: {}, //客服信息
@@ -461,9 +473,16 @@ export default {
       this.chatCon +=val;
       this.isEmoji = false
     },
+    // 输入框选择 QQ 表情（Unicode 原生字符直接追加，随文本发送）
+    selectQq(item) {
+      this.$refs.editable.innerText += item.char
+      this.chatCon += item.char;
+      this.isEmoji = false
+    },
     // 聊天表情转换
     replace_em(str) {
-      str = str.replace(/\[em-([\s\S]*)\]/g, "<span class='em em-$1'/></span>");
+      // 非贪婪匹配，保证一条消息里有多个表情码时逐个转换
+      str = str.replace(/\[em-([\s\S]*?)\]/g, "<span class='em em-$1'/></span>");
       return str;
     },
     // 获取是否游客 获取会话列表
@@ -916,21 +935,99 @@ textarea.ivu-input {
             top: 0;
             transform: translateY(-100%);
             display: flex;
-            flex-wrap: wrap;
+            flex-direction: column;
             width: 60%;
-            padding: 15px 9px;
+            height: 280px;
+            padding: 10px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
             box-shadow: 0px 0px 13px 1px rgba(0, 0, 0, 0.1);
             background: #fff;
+            z-index: 60;
 
-            .emoji-item {
-              margin-right: 13px;
-              margin-bottom: 8px;
-              cursor: pointer;
+            .emoji-tabs {
+              display: flex;
+              flex: none;
+              padding-bottom: 8px;
+              border-bottom: 1px solid #e5e5e5;
 
-              &:nth-child(10n) {
-                margin-right: 0;
+              .tab-item {
+                padding: 2px 12px;
+                font-size: 12px;
+                color: #515a6e;
+                cursor: pointer;
+                border-radius: 4px;
+                transition: color 0.2s, background 0.2s;
+
+                & + .tab-item {
+                  margin-left: 8px;
+                }
+
+                &:hover {
+                  color: #3875ea;
+                }
+
+                &.on {
+                  color: #3875ea;
+                  background: #ecf2fe;
+                }
               }
             }
+
+            .emoji-list {
+              flex: 1;
+              // flex 子项默认 min-height:auto，不置 0 则内容撑高后滚动条不生效
+              min-height: 0;
+              // 固定 10 列网格等分对齐，避免 flex + 固定边距在窄容器下断行错位
+              display: grid;
+              grid-template-columns: repeat(10, 1fr);
+              grid-auto-rows: 28px;
+              align-items: center;
+              justify-items: center;
+              padding-top: 10px;
+              overflow: auto;
+
+              // 细滚动条贴面板右缘，不挤占表情格
+              &::-webkit-scrollbar {
+                width: 4px;
+              }
+
+              &::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 2px;
+              }
+
+              &::-webkit-scrollbar-track {
+                background: transparent;
+              }
+
+              .emoji-item {
+                cursor: pointer;
+
+                &:hover {
+                  background-color: #ececec;
+                  border-radius: 4px;
+                }
+
+                // QQ 表情为 Unicode 字符，用字号呈现
+                &.qq {
+                  width: 100%;
+                  font-size: 20px;
+                  line-height: 1;
+                  text-align: center;
+                }
+              }
+            }
+          }
+
+          .emoji-bg {
+            z-index: 50;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
           }
         }
 
@@ -1052,4 +1149,5 @@ textarea.ivu-input {
     }
   }
 }
+
 </style>

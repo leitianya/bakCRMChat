@@ -426,6 +426,17 @@ export default {
 
     },
 
+    // 选择 QQ 表情（Unicode 原生字符直接追加，随文本发送）
+    selectQq(item) {
+      if(this.$route.query.deviceType == 'Mobile' || !this.$refs['inputDiv']) {
+        this.userMessage += item.char
+      } else {
+        this.inputConType = 1;
+        this.$refs['inputDiv'].innerText += item.char
+      }
+
+    },
+
     // 文本发送
     sendText() {
       let sendMessage;
@@ -453,15 +464,28 @@ export default {
       }
       let guid = getGuid();
       let chat = this.chatOptinos(guid, msn, type);
+      //本地先行上屏，不等服务端返回，保证发送体验
+      chat.add_time = Date.parse(new Date()) / 1000;
+      this.pushMessageToList(chat);
+      this.goPageBottom();
       sendMessageMobile(chat).then( res => {
-        chat.add_time = Date.parse(new Date()) / 1000;
-        this.pushMessageToList(chat);
         if (res.data.autoReply === true) {
           this.pushMessageToList(res.data.autoReplyData);
+          this.goPageBottom();
         }
-        this.goPageBottom();
-      }).catch(()=>{
+      }).catch((rej)=>{
+        //发送失败：移除已上屏的消息并提示用户
+        this.removeLocalMessage(guid);
+        this.$Message.error((rej && rej.msg) ? rej.msg : '消息发送失败，请稍后重试');
       })
+    },
+    //按 guid 移除本地消息（发送失败时回滚上屏内容）
+    removeLocalMessage(guid) {
+      let index = this.chatServerData.serviceList.findIndex(item => item.guid === guid);
+      if(index !== -1) {
+        this.chatServerData.serviceList.splice(index, 1);
+        this.goPageBottom();
+      }
     },
     pushMessageToList(data) {
       this.chatServerData.serviceList.push(data);
