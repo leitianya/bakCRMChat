@@ -19,3 +19,5 @@ bin-release/
 .idea
 # Docker 本地 MySQL 数据目录不入库
 help/docker/mysql/data/
+# Docker 本地 MySQL 日志不入库
+help/docker/mysql/log/
