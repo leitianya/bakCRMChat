@@ -32,18 +32,6 @@
               size="large"
             />
           </FormItem>
-          <FormItem prop="code">
-            <div class="code">
-              <Input
-                type="text"
-                v-model="formInline.code"
-                prefix="ios-keypad-outline"
-                placeholder="请输入验证码"
-                size="large"
-              />
-              <img :src="imgcode" class="pictrue" @click="captchas" />
-            </div>
-          </FormItem>
           <FormItem>
             <Button type="primary" long :loading="loading" size="large" @click="handleSubmit('formInline')" class="btn"
               >登录</Button
@@ -77,7 +65,7 @@
   </div>
 </template>
 <script>
-import { AccountLogin, loginInfoApi, captcha_pro } from '@/api/account';
+import { AccountLogin, loginInfoApi } from '@/api/account';
 import { getWorkermanUrl } from '@/api/kefu';
 // import mixins from '../mixins'
 import Setting from '@/setting';
@@ -100,17 +88,15 @@ export default {
       loading: false,
       isShow: false,
       autoLogin: true,
-      imgcode: '',
       formInline: {
         username: '',
         password: '',
-        code: '',
       },
       ruleInline: {
         username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
         password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-        code: [{ required: true, message: '请输入验证码', trigger: 'blur' }],
       },
+      // 登录错误次数，超过3次后弹出滑块验证码
       errorNum: 0,
       // jigsaw: null,
       login_logo: '',
@@ -146,9 +132,6 @@ export default {
         }, 400);
       }
     },
-    $route(n) {
-      this.captchas();
-    },
   },
   mounted: function () {
     this.$nextTick(() => {
@@ -170,7 +153,6 @@ export default {
       }
       this.swiperData();
     });
-    this.captchas();
   },
   methods: {
     swiperData() {
@@ -188,10 +170,10 @@ export default {
           this.swiperList = [{ slide: this.defaultSwiperList }];
         });
     },
-    success(params){ 
+    success(params){
       this.closeModel(params);
     },
-    // 关闭模态框
+    // 关闭模态框并提交登录
     closeModel(params) {
       this.isShow = false;
       let msg = this.$Message.loading({
@@ -202,9 +184,8 @@ export default {
       AccountLogin({
         account: this.formInline.username,
         pwd: this.formInline.password,
-        imgcode: this.formInline.code,
         captchaType: 'blockPuzzle',
-        captchaVerification: params.captchaVerification,
+        captchaVerification: params ? params.captchaVerification : '',
 
       })
         .then(async (res) => {
@@ -237,10 +218,9 @@ export default {
         })
         .catch((res) => {
           msg();
-          this.formInline.code = '';
           let data = res === undefined ? {} : res;
-          this.errorNum++;
-          this.captchas();
+          // 以服务端返回的错误次数为准，页面刷新后本地计数丢失也能正确触发滑块验证
+          this.errorNum = data.data && data.data.error_num ? data.data.error_num : this.errorNum + 1;
           this.$Message.error(data.msg || '登录失败');
           // if (this.jigsaw) this.jigsaw.reset();
         });
@@ -265,25 +245,15 @@ export default {
         document.getElementsByTagName('canvas')[0].className = 'index_bg';
       }
     },
-    captchas: function () {
-      captcha_pro().then(res => {
-        if(res.status == 200) {
-          this.imgcode = res.data.img;
-          this.formInline.key = res.data.key;
-        }
-      })
-      // this.imgcode = Setting.apiBaseURL + '/captcha_pro?' + Date.parse(new Date());
-    },
     handleSubmit(name) {
       this.$refs[name].validate((valid) => {
         if (valid) {
-          this.$refs.verify.show()
-
-          // if (this.errorNum >= 2) {
-          //   this.isShow = true;
-          // } else {
-          //   this.closeModel();
-          // }
+          // 登录错误超过3次后才弹出滑块验证码，否则直接登录
+          if (this.errorNum >= 3) {
+            this.$refs.verify.show();
+          } else {
+            this.closeModel();
+          }
         }
       });
     },

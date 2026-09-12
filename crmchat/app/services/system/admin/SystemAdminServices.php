@@ -13,6 +13,7 @@ namespace app\services\system\admin;
 
 use crmeb\basic\BaseServices;
 use crmeb\exceptions\AdminException;
+use crmeb\services\CacheService;
 use app\dao\system\admin\SystemAdminDao;
 use app\services\system\SystemMenusServices;
 use crmeb\services\FormBuilder;
@@ -120,6 +121,48 @@ class SystemAdminServices extends BaseServices
             'login_logo' => sys_config('login_logo'),//登陆
             'site_name' => sys_config('site_name')
         ];
+    }
+
+    /**
+     * 获取账号登录错误次数缓存的key
+     * @param string $account
+     * @return string
+     */
+    protected function getLoginErrorCacheKey(string $account)
+    {
+        return 'admin_login_error_num_' . md5($account);
+    }
+
+    /**
+     * 获取账号连续登录错误次数
+     * @param string $account
+     * @return int
+     */
+    public function getLoginErrorNum(string $account)
+    {
+        return (int)CacheService::get($this->getLoginErrorCacheKey($account), 0);
+    }
+
+    /**
+     * 登录错误次数加一并返回最新次数（30分钟内累计有效）
+     * @param string $account
+     * @return int
+     */
+    public function incLoginErrorNum(string $account)
+    {
+        $errorNum = $this->getLoginErrorNum($account) + 1;
+        CacheService::set($this->getLoginErrorCacheKey($account), $errorNum, 1800);
+        return $errorNum;
+    }
+
+    /**
+     * 登录成功后清除登录错误次数
+     * @param string $account
+     * @return bool
+     */
+    public function clearLoginErrorNum(string $account)
+    {
+        return CacheService::delete($this->getLoginErrorCacheKey($account));
     }
 
     /**

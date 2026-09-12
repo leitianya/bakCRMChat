@@ -12,6 +12,7 @@ namespace app\controller\admin;
 
 
 use app\validate\system\SystemAdminValidata;
+use crmeb\exceptions\AdminException;
 use crmeb\utils\Captcha;
 use app\services\system\admin\SystemAdminServices;
 use think\db\exception\DataNotFoundException;
@@ -27,6 +28,12 @@ use think\Response;
  */
 class Login
 {
+
+    /**
+     * 触发滑块验证码的登录错误次数阈值
+     * @var int
+     */
+    const LOGIN_ERROR_NUM = 3;
 
     /**
      * @var Request
@@ -89,27 +96,39 @@ class Login
      */
     public function login()
     {
-        [$account, $password, $imgcode, $captchaVerification, $captchaType] = $this->request->postMore([
+        [$account, $password, $captchaVerification, $captchaType] = $this->request->postMore([
             'account',
             'pwd',
-            ['imgcode', ''],
             ['captchaVerification', ''],
             ['captchaType', '']
         ], true);
 
-        if (!app()->make(Captcha::class)->check($imgcode)) {
-            return app('json')->fail('请输入正确的验证码');
-        }
-
-        try {
-            aj_captcha_check_two($captchaType, $captchaVerification);
-        } catch (\Throwable $e) {
-            return app('json')->fail('滑块验证失败');
+        // 登录错误超过3次后，必须先通过滑块验证码
+        $errorNum = $this->services->getLoginErrorNum($account);
+        if ($errorNum >= self::LOGIN_ERROR_NUM) {
+            if ($captchaVerification === '') {
+                return app('json')->fail('请先完成滑块验证', ['error_num' => $errorNum]);
+            }
+            try {
+                aj_captcha_check_two($captchaType, $captchaVerification);
+            } catch (\Throwable $e) {
+                return app('json')->fail('滑块验证失败', ['error_num' => $errorNum]);
+            }
         }
 
         validate(SystemAdminValidata::class)->scene('get')->check(['account' => $account, 'pwd' => $password]);
 
-        return app('json')->success($this->services->login($account, $password, 'admin'));
+        try {
+            $loginData = $this->services->login($account, $password, 'admin');
+        } catch (AdminException $e) {
+            // 记录登录错误次数，超过阈值后触发滑块验证码
+            return app('json')->fail($e->getMessage(), ['error_num' => $this->services->incLoginErrorNum($account)]);
+        }
+
+        // 登陆成功清除错误计数
+        $this->services->clearLoginErrorNum($account);
+
+        return app('json')->success($loginData);
     }
 
     /**
