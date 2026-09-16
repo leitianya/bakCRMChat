@@ -674,14 +674,6 @@ INSERT INTO `eb_system_config` VALUES (1,'site_name','text','input',1,'',0,'requ
 #
 
 INSERT INTO `eb_system_config` VALUES
-(375,'ai_base_url','text','input',78,'',0,'接口地址',100,0,'\"https:\\/\\/api.deepseek.com\"','接口地址','OpenAI 兼容接口地址，如 https://api.deepseek.com 或带 /v1 前缀地址，自动补全 /chat/completions',0,1),
-(376,'ai_api_key','text','input',78,'',0,'API Key',100,0,'\"\"','API Key','AI 服务密钥',0,1),
-(377,'ai_model','text','input',78,'',0,'模型标识',100,0,'\"deepseek-flash\"','模型标识','如 deepseek-chat、qwen-plus、glm-4 等',0,1),
-(378,'ai_temperature','text','input',78,'',0,'',100,0,'\"\"','采样温度','可选，0~2，默认 0.7',0,2),
-(379,'ai_max_tokens','text','input',78,'',0,'',100,0,'\"\"','最大输出 Token','可选，0 表示不限制',0,2),
-(380,'ai_timeout','text','input',78,'',0,'',100,0,'\"\"','接口超时秒数','可选，默认 120',0,2),
-(381,'ai_full_url','radio','input',78,'1=>完整地址模式\n0=>自动补全',0,'',100,0,'\"\"','地址补全方式','可选，1=地址即最终 /chat/completions 地址，0=自动补全',0,2),
-(382,'ai_protocol','radio','input',78,'1=>OpenAI兼容协议\n2=>一号通AI',0,'',100,0,'1','AI 协议','一号通AI复用「一号通设置」的全局凭证；OpenAI兼容协议需填写接口地址与 API Key',0,1),
 (383,'yihaotong_appid','text','input',78,'',0,'',100,0,'\"\"','一号通 AppId','由「一号通设置」登录成功后自动写入，无需手动填写',0,2),
 (384,'yihaotong_appsecret','text','input',78,'',0,'',100,0,'\"\"','一号通 AppSecret','由「一号通设置」登录成功后自动写入，无需手动填写',0,2);
 

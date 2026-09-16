@@ -97,6 +97,17 @@
                                 <InputNumber v-model="form.max_tokens" :min="1" :max="128000" :step="256"></InputNumber>
                                 <span class="field-tip inline-tip">0 表示使用服务端默认值</span>
                             </FormItem>
+                            <FormItem label="额外请求参数">
+                                <Input
+                                    v-model.trim="form.extra_params"
+                                    type="textarea"
+                                    :rows="2"
+                                    :maxlength="2000"
+                                    show-word-limit
+                                    placeholder='JSON 对象，原样合入请求体。如 qwen3 系列关闭思考：{"enable_thinking": false}'
+                                ></Input>
+                                <span class="field-tip inline-tip">厂商私有参数透传，model/messages/stream 不可覆盖</span>
+                            </FormItem>
                             <FormItem label="上下文窗口">
                                 <InputNumber v-model="form.context_window" :min="0" :max="10000000" :step="1000"></InputNumber>
                                 <span class="field-tip inline-tip">仅用于展示，0 表示未填写</span>
@@ -163,6 +174,7 @@ const emptyForm = () => ({
     context_window: 0,
     max_tokens: 2048,
     temperature: 0.7,
+    extra_params: '',
     is_default: 0,
     sort: 0,
     status: 1,

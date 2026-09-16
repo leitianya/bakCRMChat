@@ -47,6 +47,7 @@ class OpenAiCompatible extends BaseProtocol implements StreamAiInterface
         if ($this->maxTokens() > 0) {
             $data['max_tokens'] = $this->maxTokens();
         }
+        $data = $this->mergeExtraParams($data);
 
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -112,6 +113,7 @@ class OpenAiCompatible extends BaseProtocol implements StreamAiInterface
         if ($this->maxTokens() > 0) {
             $data['max_tokens'] = $this->maxTokens();
         }
+        $data = $this->mergeExtraParams($data);
 
         $lineBuffer = '';   // SSE 行缓冲（一次接收的数据块可能切断行）
         $errorBody = '';    // 非 200 状态码时的错误响应体
@@ -178,6 +180,28 @@ class OpenAiCompatible extends BaseProtocol implements StreamAiInterface
                 ? 'AI 模型思考过程耗尽了 max_tokens 输出上限，正文被截断为空，请调大输出上限或更换模型'
                 : 'AI 模型输出因上游内容安全策略被过滤为空，请调整提问内容或更换模型');
         }
+    }
+
+    /**
+     * 合入模型登记的额外请求参数（extra_params，JSON 对象字符串）
+     *
+     * 用于透传各厂商私有参数（如阿里云 qwen3 系列的 enable_thinking 思考开关），
+     * 显式配置优先于本类自动组装的字段；对话核心字段（model/messages/stream）
+     * 不允许被额外参数覆盖，避免破坏请求结构。
+     * @param array $data 基础请求体
+     * @return array 合入后的请求体
+     */
+    protected function mergeExtraParams(array $data): array
+    {
+        $raw = trim((string)$this->getConfigField('extra_params'));
+        if ($raw !== '') {
+            $extra = json_decode($raw, true);
+            if (is_array($extra) && $extra !== []) {
+                unset($extra['model'], $extra['messages'], $extra['stream']);
+                $data = array_merge($data, $extra);
+            }
+        }
+        return $data;
     }
 
     /**

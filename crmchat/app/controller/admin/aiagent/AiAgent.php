@@ -10,7 +10,9 @@ namespace app\controller\admin\aiagent;
 use app\controller\admin\AuthController;
 use app\services\aiagent\AgentChatService;
 use app\services\aiagent\AiAgentServices;
+use crmeb\exceptions\AdminException;
 use think\facade\Config;
+use think\facade\Log;
 
 /**
  * AI Agent 后台接口（对话/会话/消息/配置选项）
@@ -207,11 +209,30 @@ class AiAgent extends AuthController
     }
 
     /**
-     * 输出 SSE 响应头：手动补跨域头（流式 echo+exit 不走框架响应阶段），
+     * 输出 SSE 响应头：手动补跨域头（流式 echo+exit 不走框架响应发送阶段），
      * 关闭输出缓冲与脚本超时，保证流式持续输出
      */
     protected function sendSseHeaders(): void
     {
+        // SSE 的 echo+exit 流式输出仅支持 php-fpm 承载；若请求被 nginx 反代到 swoole HTTP 服务，
+        // echo 只会写进 worker 进程 stdout、exit 会触发 "swoole exit" 异常，均无法完成流式推送
+        if (preg_match('/cli/i', php_sapi_name())) {
+            throw new AdminException('SSE 流式接口仅支持 php-fpm 承载，请检查 nginx 配置，勿将该接口反代到 swoole HTTP 服务');
+        }
+
+        // 先清空全部输出缓冲并丢弃其中的脏输出（clean 而非 flush，避免污染 SSE 流），
+        // 确保 header 调用之前没有任何字节发送到客户端
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
+        // 若缓冲清空后仍提示头已发送，说明更早阶段有裸输出（如 BOM、调试输出等），
+        // 记录输出来源便于定位根因，并以明确的业务异常替代晦涩的 headers already sent
+        if (headers_sent($sentFile, $sentLine)) {
+            Log::error(sprintf('SSE 头发送失败：响应体已于 %s:%d 开始输出', $sentFile, $sentLine));
+            throw new AdminException('流式响应建立失败：响应头已发送，请查看日志定位提前输出');
+        }
+
         $origin = $this->request->header('origin');
         $cookieDomain = Config::get('cookie.domain', '');
         $corsHeader = Config::get('cookie.header');
@@ -226,10 +247,6 @@ class AiAgent extends AuthController
         header('Connection: keep-alive');
         header('X-Accel-Buffering: no');
 
-        // 清空全部输出缓冲并取消脚本超时限制
-        while (ob_get_level() > 0) {
-            ob_end_flush();
-        }
         @ini_set('zlib.output_compression', '0');
         @set_time_limit(0);
     }

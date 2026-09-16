@@ -49,6 +49,16 @@ class AiModelDao extends BaseDao
     }
 
     /**
+     * 获取显式标记为系统默认的启用模型（未标记时返回空数组，不退化兜底）
+     * @return array
+     */
+    public function getMarkedDefault(): array
+    {
+        $model = $this->getModel()->where('status', 1)->where('is_default', 1)->order('sort desc,id asc')->find();
+        return $model ? $model->toArray() : [];
+    }
+
+    /**
      * 按 ID 获取模型记录
      * @param int $id 模型ID
      * @return array

@@ -277,6 +277,19 @@ class AiModelServices extends BaseServices
     }
 
     /**
+     * 默认模型适配器：优先显式标记的系统默认模型，未标记时回退内置一号通 AI
+     *
+     * 供富文本 AI 写作等无 model_id 入参的场景复用。
+     * @return AiInterface
+     * @throws AdminException 默认模型不存在或已停用时抛出
+     */
+    public function getDefaultHandler(): AiInterface
+    {
+        $model = $this->dao->getMarkedDefault();
+        return $model ? $this->getHandler((int)$model['id']) : $this->getYihaotongHandler();
+    }
+
+    /**
      * 创建内置一号通 AI 适配器
      *
      * 一号通 appid / appsecret 由「一号通登录」写入 eb_system_config 全站共享，
@@ -315,12 +328,13 @@ class AiModelServices extends BaseServices
     public function buildConfig(array $model): array
     {
         return [
-            'api_key'     => (string)($model['api_key'] ?? ''),
-            'base_url'    => (string)($model['base_url'] ?? ''),
-            'full_url'    => (int)($model['full_url'] ?? 0),
-            'model'       => (string)($model['model'] ?? ''),
-            'temperature' => (float)($model['temperature'] ?? 0.7),
-            'max_tokens'  => (int)($model['max_tokens'] ?? 2048),
+            'api_key'      => (string)($model['api_key'] ?? ''),
+            'base_url'     => (string)($model['base_url'] ?? ''),
+            'full_url'     => (int)($model['full_url'] ?? 0),
+            'model'        => (string)($model['model'] ?? ''),
+            'temperature'  => (float)($model['temperature'] ?? 0.7),
+            'max_tokens'   => (int)($model['max_tokens'] ?? 2048),
+            'extra_params' => (string)($model['extra_params'] ?? ''),
         ];
     }
 
@@ -360,6 +374,17 @@ class AiModelServices extends BaseServices
             throw new AdminException('采样温度取值范围为 0 ~ 2');
         }
 
+        // 额外请求参数：JSON 对象字符串，原样合入对话请求体（厂商私有参数，如 enable_thinking）
+        $extraParams = trim((string)($data['extra_params'] ?? ''));
+        if ($extraParams !== '') {
+            if (!is_array(json_decode($extraParams, true))) {
+                throw new AdminException('额外请求参数必须是合法的 JSON 对象');
+            }
+            if (strlen($extraParams) > 2000) {
+                throw new AdminException('额外请求参数过长（上限 2000 字符）');
+            }
+        }
+
         return [
             'name'            => $name,
             'protocol'        => $protocol,
@@ -373,6 +398,7 @@ class AiModelServices extends BaseServices
             'context_window'  => max(0, (int)($data['context_window'] ?? 0)),
             'max_tokens'      => max(0, (int)($data['max_tokens'] ?? 2048)),
             'temperature'     => $temperature,
+            'extra_params'    => $extraParams,
             'is_default'      => (int)($data['is_default'] ?? 0) === 1 ? 1 : 0,
             'sort'            => (int)($data['sort'] ?? 0),
             'status'          => (int)($data['status'] ?? 1) === 0 ? 0 : 1,
