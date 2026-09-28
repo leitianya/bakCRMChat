@@ -1,0 +1,379 @@
+name: 一键搬运 Compose 全部镜像到 GHCR
+
+run-name: >-
+  Compose 镜像搬运 | 分支=${{ inputs.source_ref }} | 文件=${{ inputs.compose_path }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: "Compose 所在分支、Tag 或 Commit；留空使用当前默认分支"
+        required: false
+        type: string
+        default: ""
+
+      compose_path:
+        description: "Compose 文件相对路径；填 auto 自动查找常见文件名"
+        required: true
+        type: string
+        default: "auto"
+
+      target_prefix:
+        description: "GHCR 镜像名前缀；留空自动使用 当前仓库名-，填 none 不加前缀"
+        required: false
+        type: string
+        default: ""
+
+      build_platforms:
+        description: "本地 Dockerfile 构建平台；多个用逗号分隔"
+        required: true
+        type: string
+        default: "linux/amd64,linux/arm64"
+
+      skip_existing:
+        description: "目标 GHCR 中已存在同名 Tag 时跳过"
+        required: true
+        type: boolean
+        default: true
+
+      build_no_cache:
+        description: "本地 Dockerfile 构建时不使用缓存"
+        required: true
+        type: boolean
+        default: false
+
+      fail_on_missing_remote:
+        description: "远程源镜像不存在或无权访问时让任务失败"
+        required: true
+        type: boolean
+        default: true
+
+      generate_ghcr_compose:
+        description: "生成全部 image 已替换为 GHCR 的 compose.ghcr.json"
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: compose-images-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  mirror-compose-images:
+    name: 解析、搬运并构建 Compose 镜像
+    runs-on: ubuntu-24.04
+    env:
+      GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SOURCE_REGISTRY_USERNAME: ${{ secrets.SOURCE_REGISTRY_USERNAME }}
+      SOURCE_REGISTRY_TOKEN: ${{ secrets.SOURCE_REGISTRY_TOKEN }}
+      INPUT_SOURCE_REF: ${{ inputs.source_ref }}
+      INPUT_COMPOSE_PATH: ${{ inputs.compose_path }}
+      INPUT_TARGET_PREFIX: ${{ inputs.target_prefix }}
+      INPUT_BUILD_PLATFORMS: ${{ inputs.build_platforms }}
+      INPUT_SKIP_EXISTING: ${{ inputs.skip_existing }}
+      INPUT_BUILD_NO_CACHE: ${{ inputs.build_no_cache }}
+      INPUT_FAIL_ON_MISSING_REMOTE: ${{ inputs.fail_on_missing_remote }}
+      INPUT_GENERATE_COMPOSE: ${{ inputs.generate_ghcr_compose }}
+
+    steps:
+      - name: 检出指定分支或版本
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.event.repository.default_branch }}
+          fetch-depth: 1
+
+      - name: 安装 crane
+        shell: bash
+        run: |
+          set -euo pipefail
+          go install github.com/google/go-containerregistry/cmd/crane@v0.20.3
+          echo "${HOME}/go/bin" >> "${GITHUB_PATH}"
+          "${HOME}/go/bin/crane" version
+
+      - name: 准备 Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 定位并解析 Compose
+        id: compose
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${INPUT_SOURCE_REF}" ]; then
+            echo "使用默认分支：${{ github.event.repository.default_branch }}"
+          else
+            echo "使用指定版本：${INPUT_SOURCE_REF}"
+          fi
+
+          if [ "${INPUT_COMPOSE_PATH}" = "auto" ] || [ -z "${INPUT_COMPOSE_PATH}" ]; then
+            COMPOSE_FILE=""
+            for candidate in compose.yml compose.yaml docker-compose.yml docker-compose.yaml; do
+              if [ -f "${candidate}" ]; then
+                COMPOSE_FILE="${candidate}"
+                break
+              fi
+            done
+            if [ -z "${COMPOSE_FILE}" ]; then
+              mapfile -t FOUND < <(find . -maxdepth 4 -type f \( -name 'compose.yml' -o -name 'compose.yaml' -o -name 'docker-compose.yml' -o -name 'docker-compose.yaml' \) -print | sort)
+              if [ "${#FOUND[@]}" -eq 1 ]; then
+                COMPOSE_FILE="${FOUND[0]#./}"
+              elif [ "${#FOUND[@]}" -eq 0 ]; then
+                echo "::error::没有找到 Compose 文件，请填写 compose_path"
+                exit 1
+              else
+                echo "::error::找到多个 Compose 文件，请明确填写 compose_path："
+                printf '%s\n' "${FOUND[@]}"
+                exit 1
+              fi
+            fi
+          else
+            COMPOSE_FILE="${INPUT_COMPOSE_PATH#./}"
+          fi
+
+          [ -f "${COMPOSE_FILE}" ] || { echo "::error::Compose 文件不存在：${COMPOSE_FILE}"; exit 1; }
+          COMPOSE_DIR="$(dirname "${COMPOSE_FILE}")"
+          COMPOSE_ABS="$(realpath "${COMPOSE_FILE}")"
+          PROJECT_DIR="$(realpath "${COMPOSE_DIR}")"
+
+          echo "Compose 文件：${COMPOSE_FILE}"
+          echo "Compose 项目目录：${PROJECT_DIR}"
+
+          docker compose --project-directory "${PROJECT_DIR}" -f "${COMPOSE_ABS}" config --format json > "${RUNNER_TEMP}/compose.resolved.json"
+          jq -e '.services and (.services|type=="object") and (.services|length>0)' "${RUNNER_TEMP}/compose.resolved.json" >/dev/null \
+            || { echo "::error::Compose 中没有有效 services"; exit 1; }
+
+          echo "解析到的服务："
+          jq -r '.services | to_entries[] | "- \(.key): image=\(.value.image // "<无>") build=\(if .value.build then "是" else "否" end)"' "${RUNNER_TEMP}/compose.resolved.json"
+
+          echo "compose_file=${COMPOSE_FILE}" >> "${GITHUB_OUTPUT}"
+          echo "compose_dir=${COMPOSE_DIR}" >> "${GITHUB_OUTPUT}"
+          echo "compose_json=${RUNNER_TEMP}/compose.resolved.json" >> "${GITHUB_OUTPUT}"
+
+      - name: 生成镜像处理计划
+        id: plan
+        env:
+          COMPOSE_JSON: ${{ steps.compose.outputs.compose_json }}
+          COMPOSE_DIR: ${{ steps.compose.outputs.compose_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PLAN="${RUNNER_TEMP}/image-plan.json"
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          REPO_NAME="${REPO_NAME,,}"
+
+          if [ -z "${INPUT_TARGET_PREFIX}" ]; then
+            PREFIX="${REPO_NAME}-"
+          elif [ "${INPUT_TARGET_PREFIX,,}" = "none" ]; then
+            PREFIX=""
+          else
+            PREFIX="${INPUT_TARGET_PREFIX,,}"
+          fi
+
+          jq --arg owner "${OWNER}" --arg prefix "${PREFIX}" '
+            def sanitize:
+              ascii_downcase
+              | gsub("[^a-z0-9._-]+"; "-")
+              | gsub("^[._-]+|[._-]+$"; "")
+              | if length == 0 then "image" else . end;
+            [
+              .services | to_entries[] |
+              .key as $service |
+              .value as $cfg |
+              ($cfg.image // ("local-" + $service + ":latest")) as $source_image |
+              ($source_image | split("@") | .[0]) as $without_digest |
+              ($without_digest | split("/") | last) as $last |
+              ($last | if contains(":") then split(":") | last else "latest" end) as $tag |
+              ($last | if contains(":") then split(":")[0] else . end | sanitize) as $base_name |
+              {
+                service: $service,
+                type: (if $cfg.build then "build" else "remote" end),
+                source_image: $source_image,
+                target_name: ($prefix + $base_name),
+                target_image: ("ghcr.io/" + $owner + "/" + $prefix + $base_name + ":" + $tag),
+                tag: $tag,
+                build: ($cfg.build // null)
+              }
+            ]
+          ' "${COMPOSE_JSON}" > "${PLAN}.all"
+
+          # 相同 source image 或相同 build image 只处理一次；多个服务可共享一个目标镜像。
+          jq 'unique_by([.type,.source_image,.target_image])' "${PLAN}.all" > "${PLAN}"
+
+          # 检测不同源镜像是否会覆盖到同一个目标引用。
+          CONFLICTS="$(jq -r 'group_by(.target_image)[] | select(length>1 and (map(.source_image)|unique|length)>1) | .[0].target_image' "${PLAN}")"
+          if [ -n "${CONFLICTS}" ]; then
+            echo "::error::多个不同源镜像会写入同一个 GHCR 目标，请设置 target_prefix 或调整 Compose："
+            printf '%s\n' "${CONFLICTS}"
+            exit 1
+          fi
+
+          COUNT="$(jq length "${PLAN}")"
+          [ "${COUNT}" -gt 0 ] || { echo "::error::没有识别到可处理镜像"; exit 1; }
+          echo "镜像处理计划，共 ${COUNT} 个："
+          jq -r '.[] | "- [\(.type)] \(.source_image) -> \(.target_image)"' "${PLAN}"
+
+          echo "plan=${PLAN}" >> "${GITHUB_OUTPUT}"
+          echo "count=${COUNT}" >> "${GITHUB_OUTPUT}"
+
+      - name: 登录目标 GHCR
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "${GHCR_TOKEN}" | crane auth login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+          printf '%s' "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
+
+      - name: 登录源镜像仓库
+        env:
+          PLAN: ${{ steps.plan.outputs.plan }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SOURCE_REGISTRY_USERNAME}" ] && [ -z "${SOURCE_REGISTRY_TOKEN}" ]; then
+            echo "未配置源 Registry 凭据，远程公开镜像将匿名访问。"
+            exit 0
+          fi
+          [ -n "${SOURCE_REGISTRY_USERNAME}" ] && [ -n "${SOURCE_REGISTRY_TOKEN}" ] \
+            || { echo "::error::SOURCE_REGISTRY_USERNAME 和 SOURCE_REGISTRY_TOKEN 必须同时设置"; exit 1; }
+          echo "::add-mask::${SOURCE_REGISTRY_TOKEN}"
+
+          jq -r '.[] | select(.type=="remote") | .source_image' "${PLAN}" |
+            awk -F/ 'NF>1 && ($1 ~ /[.:]/ || $1=="localhost") {print $1; next} {print "index.docker.io"}' |
+            sort -u |
+            while IFS= read -r registry; do
+              [ -n "${registry}" ] || continue
+              echo "登录源 Registry：${registry}"
+              printf '%s' "${SOURCE_REGISTRY_TOKEN}" | crane auth login "${registry}" --username "${SOURCE_REGISTRY_USERNAME}" --password-stdin
+              printf '%s' "${SOURCE_REGISTRY_TOKEN}" | docker login "${registry}" --username "${SOURCE_REGISTRY_USERNAME}" --password-stdin
+            done
+
+      - name: 搬运远程镜像
+        env:
+          PLAN: ${{ steps.plan.outputs.plan }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SUMMARY="${RUNNER_TEMP}/remote-summary.txt"
+          :>"${SUMMARY}"
+          OK=0; SKIP=0; MISSING=0; FAIL=0
+
+          while IFS=$'\t' read -r source_ref target_ref; do
+            [ -n "${source_ref}" ] || continue
+
+            if [ "${INPUT_SKIP_EXISTING}" = "true" ] && crane manifest "${target_ref}" >/dev/null 2>&1; then
+              echo "跳过，目标已存在：${target_ref}" | tee -a "${SUMMARY}"
+              SKIP=$((SKIP+1))
+              continue
+            fi
+
+            if ! crane manifest "${source_ref}" >/dev/null 2>&1; then
+              echo "源镜像不存在或无权访问：${source_ref}" | tee -a "${SUMMARY}"
+              MISSING=$((MISSING+1))
+              continue
+            fi
+
+            if crane copy "${source_ref}" "${target_ref}"; then
+              echo "成功：${source_ref} -> ${target_ref}" | tee -a "${SUMMARY}"
+              OK=$((OK+1))
+            else
+              echo "失败：${source_ref} -> ${target_ref}" | tee -a "${SUMMARY}"
+              FAIL=$((FAIL+1))
+            fi
+          done < <(jq -r '.[] | select(.type=="remote") | [.source_image,.target_image] | @tsv' "${PLAN}")
+
+          echo "远程镜像成功=${OK} 跳过=${SKIP} 缺失=${MISSING} 失败=${FAIL}"
+          if [ "${INPUT_FAIL_ON_MISSING_REMOTE}" = "true" ] && [ "${MISSING}" -gt 0 ]; then exit 1; fi
+          [ "${FAIL}" -eq 0 ]
+
+      - name: 构建并推送本地 Dockerfile 镜像
+        env:
+          PLAN: ${{ steps.plan.outputs.plan }}
+          COMPOSE_DIR: ${{ steps.compose.outputs.compose_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUILD_COUNT="$(jq '[.[]|select(.type=="build")]|length' "${PLAN}")"
+          if [ "${BUILD_COUNT}" -eq 0 ]; then
+            echo "没有本地 build 镜像。"
+            exit 0
+          fi
+
+          while IFS= read -r item; do
+            SERVICE="$(jq -r '.service' <<< "${item}")"
+            TARGET_REF="$(jq -r '.target_image' <<< "${item}")"
+            CONTEXT="$(jq -r '.build.context // "."' <<< "${item}")"
+            DOCKERFILE="$(jq -r '.build.dockerfile // "Dockerfile"' <<< "${item}")"
+            TARGET_STAGE="$(jq -r '.build.target // empty' <<< "${item}")"
+
+            if [[ "${CONTEXT}" != /* ]]; then CONTEXT="${COMPOSE_DIR}/${CONTEXT}"; fi
+            CONTEXT="$(realpath "${CONTEXT}")"
+            if [[ "${DOCKERFILE}" != /* ]]; then DOCKERFILE="${CONTEXT}/${DOCKERFILE}"; fi
+            DOCKERFILE="$(realpath "${DOCKERFILE}")"
+            [ -d "${CONTEXT}" ] || { echo "::error::构建上下文不存在：${CONTEXT}"; exit 1; }
+            [ -f "${DOCKERFILE}" ] || { echo "::error::Dockerfile 不存在：${DOCKERFILE}"; exit 1; }
+
+            if [ "${INPUT_SKIP_EXISTING}" = "true" ] && crane manifest "${TARGET_REF}" >/dev/null 2>&1; then
+              echo "跳过构建，目标已存在：${TARGET_REF}"
+              continue
+            fi
+
+            ARGS=(docker buildx build --platform "${INPUT_BUILD_PLATFORMS}" --file "${DOCKERFILE}" --tag "${TARGET_REF}" --push)
+            [ "${INPUT_BUILD_NO_CACHE}" = "true" ] && ARGS+=(--no-cache)
+            [ -n "${TARGET_STAGE}" ] && ARGS+=(--target "${TARGET_STAGE}")
+
+            while IFS=$'\t' read -r key value; do
+              [ -n "${key}" ] || continue
+              ARGS+=(--build-arg "${key}=${value}")
+            done < <(jq -r '.build.args // {} | to_entries[]? | [.key,(.value|tostring)] | @tsv' <<< "${item}")
+
+            while IFS= read -r label; do
+              [ -n "${label}" ] && ARGS+=(--label "${label}")
+            done < <(jq -r '.build.labels // {} | to_entries[]? | "\(.key)=\(.value)"' <<< "${item}")
+
+            echo "构建服务 ${SERVICE}: ${DOCKERFILE} -> ${TARGET_REF}"
+            "${ARGS[@]}" "${CONTEXT}"
+            crane manifest "${TARGET_REF}" >/dev/null \
+              || { echo "::error::构建后无法读取目标 Manifest：${TARGET_REF}"; exit 1; }
+          done < <(jq -c '.[] | select(.type=="build")' "${PLAN}")
+
+      - name: 生成 GHCR Compose 和映射清单
+        if: ${{ inputs.generate_ghcr_compose }}
+        env:
+          PLAN: ${{ steps.plan.outputs.plan }}
+          COMPOSE_JSON: ${{ steps.compose.outputs.compose_json }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT_DIR="${RUNNER_TEMP}/compose-ghcr-output"
+          mkdir -p "${OUT_DIR}"
+          cp "${PLAN}" "${OUT_DIR}/image-plan.json"
+
+          jq --slurpfile plan "${PLAN}" '
+            reduce ($plan[0][] | select(.service != null)) as $item
+              (.;
+                .services[$item.service].image = $item.target_image
+                | if $item.type == "build" then del(.services[$item.service].build) else . end
+              )
+          ' "${COMPOSE_JSON}" > "${OUT_DIR}/compose.ghcr.json"
+
+          cat > "${OUT_DIR}/README.txt" <<EOF
+          compose.ghcr.json 已将远程镜像和本地构建镜像全部替换为本次生成的 GHCR 地址。
+          使用方法：docker compose -f compose.ghcr.json up -d
+          来源仓库：${GITHUB_REPOSITORY}
+          来源版本：${INPUT_SOURCE_REF:-${{ github.event.repository.default_branch }}}
+          EOF
+
+          echo "output_dir=${OUT_DIR}" >> "${GITHUB_OUTPUT}"
+
+      - name: 上传 GHCR Compose 结果
+        if: ${{ inputs.generate_ghcr_compose }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: compose-ghcr-${{ github.run_number }}
+          path: ${{ runner.temp }}/compose-ghcr-output
+          if-no-files-found: error
+          retention-days: 30
