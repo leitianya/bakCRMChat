@@ -302,6 +302,11 @@ jobs:
             exit 0
           fi
 
+          SKIPPED_BUILDS="${RUNNER_TEMP}/skipped-build-services.txt"
+          BUILD_SUMMARY="${RUNNER_TEMP}/build-summary.txt"
+          :>"${SKIPPED_BUILDS}"
+          :>"${BUILD_SUMMARY}"
+
           while IFS= read -r item; do
             SERVICE="$(jq -r '.service' <<< "${item}")"
             TARGET_REF="$(jq -r '.target_image' <<< "${item}")"
@@ -335,10 +340,33 @@ jobs:
             done < <(jq -r '.build.labels // {} | to_entries[]? | "\(.key)=\(.value)"' <<< "${item}")
 
             echo "构建服务 ${SERVICE}: ${DOCKERFILE} -> ${TARGET_REF}"
-            "${ARGS[@]}" "${CONTEXT}"
-            crane manifest "${TARGET_REF}" >/dev/null \
-              || { echo "::error::构建后无法读取目标 Manifest：${TARGET_REF}"; exit 1; }
+            BUILD_LOG="${RUNNER_TEMP}/build-${SERVICE//[^A-Za-z0-9_.-]/_}.log"
+            set +e
+            "${ARGS[@]}" "${CONTEXT}" 2>&1 | tee "${BUILD_LOG}"
+            BUILD_RC=${PIPESTATUS[0]}
+            set -e
+
+            if [ "${BUILD_RC}" -ne 0 ]; then
+              if grep -Eqi 'no match for platform in manifest|no matching manifest|no match for platform' "${BUILD_LOG}"; then
+                echo "::warning::服务 ${SERVICE} 的基础镜像不支持所选平台，已跳过该本地镜像并继续：${TARGET_REF}"
+                printf '%s\n' "${SERVICE}" >> "${SKIPPED_BUILDS}"
+                printf '跳过（平台不支持）：%s -> %s\n' "${SERVICE}" "${TARGET_REF}" >> "${BUILD_SUMMARY}"
+                continue
+              fi
+              echo "::error::服务 ${SERVICE} 构建失败，退出码 ${BUILD_RC}"
+              exit "${BUILD_RC}"
+            fi
+
+            if ! crane manifest "${TARGET_REF}" >/dev/null 2>&1; then
+              echo "::error::构建后无法读取目标 Manifest：${TARGET_REF}"
+              exit 1
+            fi
+            printf '成功：%s -> %s\n' "${SERVICE}" "${TARGET_REF}" >> "${BUILD_SUMMARY}"
           done < <(jq -c '.[] | select(.type=="build")' "${PLAN}")
+
+          sort -u "${SKIPPED_BUILDS}" -o "${SKIPPED_BUILDS}"
+          echo "本地构建汇总："
+          cat "${BUILD_SUMMARY}"
 
       - name: 生成 GHCR Compose 和映射清单
         if: ${{ inputs.generate_ghcr_compose }}
@@ -352,16 +380,25 @@ jobs:
           mkdir -p "${OUT_DIR}"
           cp "${PLAN}" "${OUT_DIR}/image-plan.json"
 
-          jq --slurpfile plan "${PLAN}" '
+          SKIPPED_BUILDS="${RUNNER_TEMP}/skipped-build-services.txt"
+          [ -f "${SKIPPED_BUILDS}" ] || :>"${SKIPPED_BUILDS}"
+          jq -R -s 'split("\n") | map(select(length>0))' "${SKIPPED_BUILDS}" > "${OUT_DIR}/skipped-build-services.json"
+
+          jq --slurpfile plan "${PLAN}" --slurpfile skipped "${OUT_DIR}/skipped-build-services.json" '
             reduce ($plan[0][] | select(.service != null)) as $item
               (.;
-                .services[$item.service].image = $item.target_image
-                | if $item.type == "build" then del(.services[$item.service].build) else . end
+                if ($skipped[0] | index($item.service)) != null then
+                  .
+                else
+                  .services[$item.service].image = $item.target_image
+                  | if $item.type == "build" then del(.services[$item.service].build) else . end
+                end
               )
           ' "${COMPOSE_JSON}" > "${OUT_DIR}/compose.ghcr.json"
 
           cat > "${OUT_DIR}/README.txt" <<EOF
-          compose.ghcr.json 已将远程镜像和本地构建镜像全部替换为本次生成的 GHCR 地址。
+          compose.ghcr.json 已将成功搬运或构建的镜像替换为本次生成的 GHCR 地址。
+          若某个本地构建出现 no match for platform in manifest，该服务会被跳过并保留原 build/image 配置；详情见 skipped-build-services.json。
           使用方法：docker compose -f compose.ghcr.json up -d
           来源仓库：${GITHUB_REPOSITORY}
           来源版本：${INPUT_SOURCE_REF:-${{ github.event.repository.default_branch }}}
